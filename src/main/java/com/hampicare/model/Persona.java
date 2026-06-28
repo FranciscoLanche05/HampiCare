@@ -1,6 +1,7 @@
 package com.hampicare.model;
 
-public abstract class Persona {
+public abstract class
+Persona {
     private int    id;
     private String nombre;
     private String correo;
