@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16
+    container_name: hampicare_db
+    restart: always
+    environment:
+      POSTGRES_USER: adminHampiCare
+      POSTGRES_PASSWORD: adminHampi
+      POSTGRES_DB: hampicare_db
+    ports:
+      - "5432:5432"
+    volumes:
+      #Para persistencia de datos
+      - postgres_data:/var/lib/postgresql/data
+      #Para ejecutar el script automaticamente
+      - ./src/main/java/com/hampicare/db/Script.sql:/docker-entrypoint-initdb.d/init.sql
+volumes:
+  postgres_data:
