@@ -1,82 +1,68 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.PasswordField?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.control.ToggleButton?>
-<?import javafx.scene.control.ToggleGroup?>
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Region?>
-<?import javafx.scene.layout.StackPane?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
 
 <!--
     Estructura: StackPane de fondo que llena TODA la ventana, con una
     tarjeta (login-card) de tamaño fijo centrada adentro — así se ve
     bien sin importar el tamaño/proporción de la ventana.
 -->
-<StackPane xmlns:fx="http://javafx.com/fxml"
-           fx:controller="com.hampicare.controller.LoginController"
-           styleClass="login-backdrop"
-           stylesheets="@../css/styles.css">
 
-    <HBox styleClass="login-card" maxWidth="900" maxHeight="560" prefWidth="900" prefHeight="560">
+<StackPane styleClass="login-backdrop" stylesheets="@../css/styles.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.hampicare.controller.LoginController">
+
+    <HBox maxHeight="560" maxWidth="900" prefHeight="560" prefWidth="900" styleClass="login-card">
 
         <!-- ===== Columna izquierda: marca ===== -->
-        <VBox styleClass="login-aside" spacing="14" alignment="CENTER" HBox.hgrow="ALWAYS" prefWidth="400">
+        <VBox alignment="CENTER" prefWidth="400" spacing="14" styleClass="login-aside" HBox.hgrow="ALWAYS">
             <ImageView fitWidth="190" preserveRatio="true">
                 <image>
-                    <Image url="@../images/logo.png"/>
+                    <Image url="@../images/logo.png" />
                 </image>
             </ImageView>
-            <Region VBox.vgrow="ALWAYS"/>
-            <Label text="🔒 Sesión cifrada de extremo a extremo" styleClass="login-foot"/>
+            <Region VBox.vgrow="ALWAYS" />
+            <Label styleClass="login-foot" text="🔒 Sesión cifrada de extremo a extremo" />
         </VBox>
 
         <!-- ===== Columna derecha: formulario ===== -->
-        <VBox styleClass="login-main" alignment="CENTER" HBox.hgrow="ALWAYS" prefWidth="500">
-            <VBox spacing="18" maxWidth="330">
+        <VBox alignment="CENTER" prefWidth="500" styleClass="login-main" HBox.hgrow="ALWAYS">
+            <VBox maxWidth="330" spacing="18">
                 <VBox spacing="4">
-                    <Label text="Iniciar sesión" styleClass="login-title"/>
-                    <Label text="Entorno operativo seguro" styleClass="login-subtitle"/>
+                    <Label styleClass="login-title" text="Iniciar sesión" />
+                    <Label styleClass="login-subtitle" text="Entorno operativo seguro" />
                 </VBox>
 
                 <VBox spacing="7">
-                    <Label text="Selecciona tu rol" styleClass="field-label"/>
+                    <Label styleClass="field-label" text="Selecciona tu rol" />
                     <HBox spacing="6" styleClass="role-selector">
                         <fx:define>
-                            <ToggleGroup fx:id="rolToggleGroup"/>
+                            <ToggleGroup fx:id="rolToggleGroup" />
                         </fx:define>
-                        <ToggleButton fx:id="rolAdminToggle" text="Administrador" styleClass="role-toggle"
-                                      toggleGroup="$rolToggleGroup" userData="ADMIN" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                        <ToggleButton fx:id="rolCajeroToggle" text="Cajero" styleClass="role-toggle"
-                                      toggleGroup="$rolToggleGroup" userData="CAJERO" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                        <ToggleButton fx:id="rolReportesToggle" text="Reportes" styleClass="role-toggle"
-                                      toggleGroup="$rolToggleGroup" userData="REPORTES" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                        <ToggleButton fx:id="rolAdminToggle" maxWidth="Infinity" styleClass="role-toggle" text="Administrador" userData="ADMIN" HBox.hgrow="ALWAYS">
+                     <toggleGroup>
+                        <ToggleGroup fx:id="rolToggleGroup" />
+                     </toggleGroup></ToggleButton>
+                        <ToggleButton fx:id="rolCajeroToggle" maxWidth="Infinity" styleClass="role-toggle" text="Cajero" toggleGroup="$rolToggleGroup" userData="CAJERO" HBox.hgrow="ALWAYS" />
+                        <ToggleButton fx:id="rolReportesToggle" maxWidth="Infinity" styleClass="role-toggle" text="Reportes" toggleGroup="$rolToggleGroup" userData="REPORTES" HBox.hgrow="ALWAYS" />
                     </HBox>
                 </VBox>
 
                 <VBox spacing="7">
-                    <Label text="Correo" styleClass="field-label"/>
-                    <TextField fx:id="usuarioField" styleClass="input-field" promptText="admin@hampipharma.com"/>
+                    <Label styleClass="field-label" text="Correo" />
+                    <TextField fx:id="usuarioField" promptText="admin@hampipharma.com" styleClass="input-field" />
                 </VBox>
 
                 <VBox spacing="7">
-                    <Label text="Contraseña" styleClass="field-label"/>
-                    <PasswordField fx:id="contrasenaField" styleClass="input-field" promptText="Ingresa tu contraseña"/>
+                    <Label styleClass="field-label" text="Contraseña" />
+                    <PasswordField fx:id="contrasenaField" promptText="Ingresa tu contraseña" styleClass="input-field" />
                 </VBox>
 
-                <Button text="Ingresar  →" styleClass="btn-primary" maxWidth="Infinity"
-                        onAction="#handleLogin"/>
+                <Button maxWidth="Infinity" onAction="#handleLogin" styleClass="btn-primary" text="Ingresar  →" />
 
-                <Label text="🛡 Acceso restringido a personal autorizado" styleClass="secure-note"
-                       wrapText="true"/>
+                <Label styleClass="secure-note" text="🛡 Acceso restringido a personal autorizado" wrapText="true" />
 
-                <Label text="Prueba: selecciona un rol e ingresa admin@hampipharma.com / cajero@hampipharma.com / reportes@hampipharma.com (clave: 123456)"
-                       styleClass="secure-note" wrapText="true" style="-fx-font-style: italic;"/>
+                <Label style="-fx-font-style: italic;" styleClass="secure-note" text="Prueba: selecciona un rol e ingresa admin@hampipharma.com / cajero@hampipharma.com / reportes@hampipharma.com (clave: 123456)" wrapText="true" />
             </VBox>
         </VBox>
 
