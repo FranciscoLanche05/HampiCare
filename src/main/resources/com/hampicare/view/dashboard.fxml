@@ -1,14 +1,295 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.text.TextFlow?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="CONTROLLER_NAME"
-            prefHeight="400.0" prefWidth="600.0">
+<BorderPane fx:id="rootPane" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.hampicare.controller.DashboardController"
+            prefWidth="1280" prefHeight="800"
+            stylesheets="@../css/styles.css">
 
-</AnchorPane>
+    <!-- ============ SIDEBAR (igual para los 3 roles; se adapta por código) ============ -->
+    <left>
+        <VBox styleClass="sidebar" spacing="4">
+            <HBox styleClass="sb-divider" spacing="10" alignment="CENTER_LEFT">
+                <StackPane styleClass="sb-brand-mark">
+                    <Label text="H" textFill="WHITE" style="-fx-font-weight:700;-fx-font-size:14px;"/>
+                </StackPane>
+                <Label text="Hampi Pharma" styleClass="sb-brand-label"/>
+                <VBox.margin><Insets bottom="22"/></VBox.margin>
+            </HBox>
+
+            <Button fx:id="navHome" text="Panel principal" styleClass="nav-item, active"
+                    maxWidth="Infinity" onAction="#showHome"/>
+            <Button fx:id="navInventario" text="Inventario" styleClass="nav-item"
+                    maxWidth="Infinity" onAction="#showInventario"/>
+            <Button fx:id="navUsuarios" text="Gestión de usuarios" styleClass="nav-item"
+                    maxWidth="Infinity" onAction="#showUsuarios"/>
+            <Button fx:id="navReportes" text="Reportes" styleClass="nav-item"
+                    maxWidth="Infinity" onAction="#showReportes"/>
+            <Button fx:id="navConfiguracion" text="Configuración" styleClass="nav-item"
+                    maxWidth="Infinity" onAction="#showConfiguracion"/>
+
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <HBox spacing="10" alignment="CENTER_LEFT" styleClass="sb-divider">
+                <StackPane styleClass="sb-user-avatar">
+                    <Label fx:id="userInitialsLabel" text="--" styleClass="sb-user-avatar-text"/>
+                </StackPane>
+                <VBox>
+                    <Label fx:id="userNameLabel" text="—" styleClass="sb-user-name"/>
+                    <Label fx:id="userRoleLabel" text="—" styleClass="sb-user-role"/>
+                </VBox>
+                <VBox.margin><Insets top="16" bottom="14"/></VBox.margin>
+            </HBox>
+
+            <!-- Botón de cerrar sesión, visible siempre (requisito obligatorio) -->
+            <Button text="⎋  Cerrar sesión" styleClass="sb-logout" onAction="#handleLogout"/>
+        </VBox>
+    </left>
+
+    <!-- ============ MAIN ============ -->
+    <center>
+        <VBox styleClass="main-area">
+
+            <HBox styleClass="topbar" alignment="CENTER_LEFT" spacing="14">
+                <Label fx:id="sectionTitleLabel" text="Panel principal" styleClass="topbar-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <TextField styleClass="search-shell" promptText="🔍  Buscar..."/>
+                <Button text="🔔" styleClass="icon-btn"/>
+            </HBox>
+
+            <ScrollPane fitToWidth="true" styleClass="main-area">
+                <StackPane>
+
+                    <!-- ===================== HOME ===================== -->
+                    <VBox fx:id="homeView" styleClass="content-area" spacing="18">
+                        <TextFlow styleClass="welcome-text">
+                            <Text text="Bienvenido, "/>
+                            <Text fx:id="welcomeNameLabel" text="—" styleClass="bold"/>
+                            <Text text=". Sesión iniciada correctamente."/>
+                        </TextFlow>
+
+                        <GridPane hgap="14" vgap="14">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="50"/>
+                                <ColumnConstraints percentWidth="50"/>
+                            </columnConstraints>
+
+                            <VBox styleClass="stat-card" spacing="6" GridPane.columnIndex="0">
+                                <HBox alignment="CENTER_LEFT">
+                                    <Label text="STOCK BAJO" styleClass="stat-label"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <StackPane styleClass="stat-icon, a"><Label text="⚠"/></StackPane>
+                                </HBox>
+                                <Label fx:id="stockBajoValueLabel" text="0" styleClass="stat-value, alert"/>
+                                <Label text="Artículos requieren atención" styleClass="stat-sub"/>
+                            </VBox>
+
+                            <VBox styleClass="stat-card" spacing="6" GridPane.columnIndex="1">
+                                <HBox alignment="CENTER_LEFT">
+                                    <Label text="USUARIOS ACTIVOS" styleClass="stat-label"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <StackPane styleClass="stat-icon, g"><Label text="👤"/></StackPane>
+                                </HBox>
+                                <Label fx:id="usuariosActivosValueLabel" text="0" styleClass="stat-value"/>
+                                <Label text="Con acceso al sistema" styleClass="stat-sub"/>
+                            </VBox>
+                        </GridPane>
+
+                        <GridPane hgap="14" vgap="14">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="62"/>
+                                <ColumnConstraints percentWidth="38"/>
+                            </columnConstraints>
+
+                            <VBox styleClass="panel" spacing="14" GridPane.columnIndex="0">
+                                <HBox alignment="CENTER_LEFT">
+                                    <Label text="Resumen de ventas" styleClass="panel-title"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Label text="Últimos 7 días" styleClass="pill"/>
+                                </HBox>
+                                <HBox fx:id="barsContainer" spacing="14" alignment="BOTTOM_CENTER" prefHeight="140"/>
+                            </VBox>
+
+                            <VBox styleClass="panel" spacing="4" GridPane.columnIndex="1">
+                                <Label text="Actividad reciente" styleClass="panel-title">
+                                    <VBox.margin><Insets bottom="10"/></VBox.margin>
+                                </Label>
+                                <VBox fx:id="activityContainer" spacing="0"/>
+                            </VBox>
+                        </GridPane>
+                    </VBox>
+
+                    <!-- ===================== INVENTARIO (CRUD) ===================== -->
+                    <VBox fx:id="inventarioView" styleClass="content-area" spacing="18" visible="false" managed="false">
+                        <VBox styleClass="panel" spacing="14">
+                            <Label text="Registro de medicamentos" styleClass="panel-title"/>
+                            <GridPane hgap="12" vgap="10">
+                                <columnConstraints>
+                                    <ColumnConstraints percentWidth="33"/>
+                                    <ColumnConstraints percentWidth="33"/>
+                                    <ColumnConstraints percentWidth="34"/>
+                                </columnConstraints>
+                                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                    <Label text="Nombre" styleClass="field-label"/>
+                                    <TextField fx:id="nombreMedField" styleClass="input-field"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                    <Label text="Categoría" styleClass="field-label"/>
+                                    <TextField fx:id="categoriaMedField" styleClass="input-field"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="2" GridPane.rowIndex="0">
+                                    <Label text="Precio" styleClass="field-label"/>
+                                    <TextField fx:id="precioMedField" styleClass="input-field" promptText="0.00"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                                    <Label text="Stock" styleClass="field-label"/>
+                                    <TextField fx:id="stockMedField" styleClass="input-field" promptText="0"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                    <Label text="Lote" styleClass="field-label"/>
+                                    <TextField fx:id="loteMedField" styleClass="input-field"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                                    <Label text="Fecha de vencimiento" styleClass="field-label"/>
+                                    <DatePicker fx:id="fechaVencMedPicker" maxWidth="Infinity" styleClass="input-field"/>
+                                </VBox>
+                                <rowConstraints>
+                                    <RowConstraints/>
+                                    <RowConstraints/>
+                                </rowConstraints>
+                            </GridPane>
+                            <HBox spacing="10">
+                                <Button fx:id="btnGuardarMed" text="Guardar" styleClass="btn-primary" onAction="#handleGuardarMedicamento"/>
+                                <Button fx:id="btnActualizarMed" text="Actualizar" styleClass="btn-secondary" onAction="#handleActualizarMedicamento"/>
+                                <Button fx:id="btnEliminarMed" text="Eliminar" styleClass="btn-danger" onAction="#handleEliminarMedicamento"/>
+                                <Button fx:id="btnLimpiarMed" text="Limpiar" styleClass="btn-ghost" onAction="#handleLimpiarMedicamento"/>
+                            </HBox>
+                        </VBox>
+
+                        <VBox styleClass="panel" spacing="10" VBox.vgrow="ALWAYS">
+                            <Label text="Medicamentos registrados" styleClass="panel-title"/>
+                            <TableView fx:id="tablaMedicamentos" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="colIdMed" text="ID" prefWidth="50"/>
+                                    <TableColumn fx:id="colNombreMed" text="Nombre" prefWidth="170"/>
+                                    <TableColumn fx:id="colCategoriaMed" text="Categoría" prefWidth="130"/>
+                                    <TableColumn fx:id="colPrecioMed" text="Precio" prefWidth="90"/>
+                                    <TableColumn fx:id="colStockMed" text="Stock" prefWidth="80"/>
+                                    <TableColumn fx:id="colLoteMed" text="Lote" prefWidth="100"/>
+                                    <TableColumn fx:id="colFechaMed" text="Vencimiento" prefWidth="120"/>
+                                </columns>
+                            </TableView>
+                        </VBox>
+                    </VBox>
+
+                    <!-- ===================== USUARIOS (solo Administrador) ===================== -->
+                    <VBox fx:id="usuariosView" styleClass="content-area" spacing="18" visible="false" managed="false">
+                        <VBox styleClass="panel" spacing="14">
+                            <Label text="Registro de usuarios" styleClass="panel-title"/>
+                            <GridPane hgap="12" vgap="10">
+                                <columnConstraints>
+                                    <ColumnConstraints percentWidth="30"/>
+                                    <ColumnConstraints percentWidth="30"/>
+                                    <ColumnConstraints percentWidth="20"/>
+                                    <ColumnConstraints percentWidth="20"/>
+                                </columnConstraints>
+                                <VBox spacing="5" GridPane.columnIndex="0">
+                                    <Label text="Nombre" styleClass="field-label"/>
+                                    <TextField fx:id="nombreUsuField" styleClass="input-field"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="1">
+                                    <Label text="Correo" styleClass="field-label"/>
+                                    <TextField fx:id="correoUsuField" styleClass="input-field"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="2">
+                                    <Label text="Contraseña" styleClass="field-label"/>
+                                    <PasswordField fx:id="contrasenaUsuField" styleClass="input-field"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="3">
+                                    <Label text="Rol" styleClass="field-label"/>
+                                    <ComboBox fx:id="rolUsuCombo" maxWidth="Infinity" styleClass="input-field"/>
+                                </VBox>
+                            </GridPane>
+                            <HBox spacing="10">
+                                <Button fx:id="btnGuardarUsu" text="Guardar" styleClass="btn-primary" onAction="#handleGuardarUsuario"/>
+                                <Button fx:id="btnEliminarUsu" text="Eliminar" styleClass="btn-danger" onAction="#handleEliminarUsuario"/>
+                                <Button fx:id="btnLimpiarUsu" text="Limpiar" styleClass="btn-ghost" onAction="#handleLimpiarUsuario"/>
+                            </HBox>
+                        </VBox>
+
+                        <VBox styleClass="panel" spacing="10" VBox.vgrow="ALWAYS">
+                            <Label text="Usuarios del sistema" styleClass="panel-title"/>
+                            <TableView fx:id="tablaUsuarios" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="colIdUsu" text="ID" prefWidth="50"/>
+                                    <TableColumn fx:id="colNombreUsu" text="Nombre" prefWidth="180"/>
+                                    <TableColumn fx:id="colCorreoUsu" text="Correo" prefWidth="200"/>
+                                    <TableColumn fx:id="colRolUsu" text="Rol" prefWidth="110"/>
+                                    <TableColumn fx:id="colActivoUsu" text="Activo" prefWidth="70"/>
+                                </columns>
+                            </TableView>
+                        </VBox>
+                    </VBox>
+
+                    <!-- ===================== REPORTES ===================== -->
+                    <VBox fx:id="reportesView" styleClass="content-area" spacing="18" visible="false" managed="false">
+                        <VBox styleClass="panel" spacing="14">
+                            <Label text="Estadísticas generales" styleClass="panel-title"/>
+                            <Label fx:id="lblTotalMedicamentosRep" text="0 medicamentos registrados" styleClass="a-text-title"/>
+                            <Label fx:id="lblStockBajoRep" text="0 artículos con stock bajo" styleClass="a-text-title"/>
+                            <Label fx:id="lblUsuariosActivosRep" text="0 usuarios activos" styleClass="a-text-title"/>
+                            <Button fx:id="btnExportarReporte" text="⬇ Exportar reporte (.csv)" styleClass="btn-primary"
+                                    onAction="#handleExportarReporte"/>
+                        </VBox>
+                    </VBox>
+
+                    <!-- ===================== CONFIGURACIÓN (solo Administrador) ===================== -->
+                    <VBox fx:id="configuracionView" styleClass="content-area" spacing="18" visible="false" managed="false">
+                        <VBox styleClass="panel" spacing="14" maxWidth="480">
+                            <Label text="Parámetros del sistema" styleClass="panel-title"/>
+                            <VBox spacing="5">
+                                <Label text="Nombre de la empresa" styleClass="field-label"/>
+                                <TextField fx:id="empresaField" styleClass="input-field"/>
+                            </VBox>
+                            <VBox spacing="5">
+                                <Label text="IVA (ej. 0.15)" styleClass="field-label"/>
+                                <TextField fx:id="ivaField" styleClass="input-field"/>
+                            </VBox>
+                            <VBox spacing="5">
+                                <Label text="Umbral de stock bajo" styleClass="field-label"/>
+                                <TextField fx:id="umbralStockField" styleClass="input-field"/>
+                            </VBox>
+                            <VBox spacing="5">
+                                <Label text="Umbral de días para vencimiento" styleClass="field-label"/>
+                                <TextField fx:id="umbralDiasField" styleClass="input-field"/>
+                            </VBox>
+                            <Button fx:id="btnGuardarConfig" text="Guardar cambios" styleClass="btn-primary"
+                                    onAction="#handleGuardarConfiguracion"/>
+                        </VBox>
+                    </VBox>
+
+                </StackPane>
+            </ScrollPane>
+        </VBox>
+    </center>
+</BorderPane>
