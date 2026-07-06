@@ -1,28 +1,31 @@
 package com.hampicare.model;
 
-public abstract class
-Persona {
-    private int    id;
-    private String nombre;
-    private String correo;
-    private String contrasena;
+/**
+ * Clase base abstracta. Toda entidad que representa a una persona dentro
+ * del sistema (Usuario, y a futuro Cliente/Proveedor si se requiere)
+ * hereda de aquí.
+ *
+ * PILAR APLICADO: Abstracción + Encapsulamiento
+ * - Los atributos son 'protected' para que las clases hijas puedan
+ *   acceder directamente sin romper el encapsulamiento hacia el exterior.
+ * - getDescripcionRol() es un método abstracto: cada clase hija decide
+ *   cómo se describe a sí misma (esto se termina de resolver con
+ *   POLIMORFISMO en las clases hijas de Usuario).
+ */
+public abstract class Persona {
 
-    // ---------------------------------------------------------------
-    // Constructores
-    // ---------------------------------------------------------------
+    protected int id;
+    protected String nombre;
+    protected String correo;
 
-    public Persona() {}
-
-    public Persona(int id, String nombre, String correo, String contrasena) {
-        this.id         = id;
-        this.nombre     = nombre;
-        this.correo     = correo;
-        this.contrasena = contrasena;
+    protected Persona() {
     }
 
-    // ---------------------------------------------------------------
-    // Getters y Setters
-    // ---------------------------------------------------------------
+    protected Persona(int id, String nombre, String correo) {
+        this.id = id;
+        setNombre(nombre);
+        setCorreo(correo);
+    }
 
     public int getId() {
         return id;
@@ -37,7 +40,10 @@ Persona {
     }
 
     public void setNombre(String nombre) {
-        this.nombre = nombre;
+        if (nombre == null || nombre.trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre no puede estar vacío.");
+        }
+        this.nombre = nombre.trim();
     }
 
     public String getCorreo() {
@@ -45,30 +51,12 @@ Persona {
     }
 
     public void setCorreo(String correo) {
-        this.correo = correo;
+        if (correo == null || correo.trim().isEmpty()) {
+            throw new IllegalArgumentException("El correo no puede estar vacío.");
+        }
+        this.correo = correo.trim();
     }
 
-    public String getContrasena() {
-        return contrasena;
-    }
-
-    public void setContrasena(String contrasena) {
-        this.contrasena = contrasena;
-    }
-
-    // ---------------------------------------------------------------
-    // Métodos abstractos (ABSTRACCIÓN + POLIMORFISMO)
-    // ---------------------------------------------------------------
-
-    public abstract String getRolDescripcion();
-    public abstract boolean esValido();
-
-    // ---------------------------------------------------------------
-    // toString
-    // ---------------------------------------------------------------
-
-    @Override
-    public String toString() {
-        return "Persona{id=" + id + ", nombre='" + nombre + "', correo='" + correo + "'}";
-    }
+    /** Método abstracto: cada subclase concreta define qué es "su rol". */
+    public abstract String getDescripcionRol();
 }

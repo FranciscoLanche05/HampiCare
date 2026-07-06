@@ -1,0 +1,624 @@
+/* =========================================================
+   Hampi Pharma — Paleta de colores (equivalente a :root { --var } )
+   JavaFX permite "looked-up colors": se definen en .root y se
+   referencian con -fx-background-color: -sage;  en cualquier hijo.
+   ========================================================= */
+.root {
+    -sage:        #5B9C82;
+    -sage-deep:   #3A7059;
+    -sage-pale:   #E4EFE9;
+    -sage-pale-2: #CFE3D8;
+    -coral:       #D9714F;
+    -coral-deep:  #A8502F;
+    -coral-pale:  #F3E2D9;
+    -cream:       #F1EEE4;
+    -paper:       #F8F6EF;
+    -sand:        #E9E4D6;
+    -ink:         #332F28;
+    -ink-soft:    #6E6A5E;
+    -ink-faint:   #9A9587;
+    -line:        #DDD7C7;
+    -line-soft:   #E5E0D2;
+
+    -fx-font-family: "Segoe UI";
+    -fx-background-color: -cream;
+}
+
+.font-display {
+    -fx-font-family: "Georgia";
+}
+
+/* ============ ACENTOS POR ROL ============
+   Se aplican como styleClass del BorderPane raíz del dashboard
+   (ver DashboardController.setUsuario -> rootPane.getStyleClass()).
+   Los hijos leen -role-accent / -role-accent-pale con "lookup". */
+.role-admin {
+    -role-accent: -sage-deep;
+    -role-accent-pale: -sage-pale;
+}
+.role-cajero {
+    -role-accent: #2E7D46;
+    -role-accent-pale: #DCEEE1;
+}
+.role-reportes {
+    -role-accent: #6A4C93;
+    -role-accent-pale: #EAE3F4;
+}
+
+/* ============ LOGIN ============ */
+.login-aside {
+    -fx-background-color: -sage-pale;
+    -fx-padding: 48;
+    -fx-alignment: center;
+}
+
+.login-icon {
+    -fx-background-color: -paper;
+    -fx-background-radius: 20;
+    -fx-min-width: 68;
+    -fx-min-height: 68;
+    -fx-max-width: 68;
+    -fx-max-height: 68;
+    -fx-alignment: center;
+    -fx-effect: dropshadow(gaussian, rgba(58,112,89,0.22), 20, 0.2, 0, 6);
+}
+
+.login-icon-glyph {
+    -fx-fill: -sage-deep;
+    -fx-stroke: -sage-deep;
+    -fx-font-size: 26px;
+}
+
+.brand-name {
+    -fx-font-family: "Georgia";
+    -fx-font-size: 34px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -ink;
+}
+
+.brand-tag {
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -sage-deep;
+}
+
+.login-foot {
+    -fx-font-size: 11.5px;
+    -fx-text-fill: -ink-soft;
+}
+
+.login-main {
+    -fx-background-color: -paper;
+    -fx-padding: 48;
+    -fx-alignment: center;
+}
+
+.login-title {
+    -fx-font-family: "Georgia";
+    -fx-font-size: 28px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -ink;
+}
+
+.login-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: -ink-faint;
+}
+
+.field-label {
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -ink-soft;
+}
+
+.input-field {
+    -fx-background-color: -cream;
+    -fx-border-color: -line;
+    -fx-border-radius: 9;
+    -fx-background-radius: 9;
+    -fx-padding: 11 13;
+    -fx-font-size: 13.5px;
+    -fx-text-fill: -ink;
+    -fx-prompt-text-fill: -ink-faint;
+}
+.input-field:focused {
+    -fx-border-color: -sage;
+}
+
+.btn-primary {
+    -fx-background-color: -coral;
+    -fx-text-fill: white;
+    -fx-background-radius: 9;
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-padding: 12 20;
+    -fx-cursor: hand;
+}
+.btn-primary:hover {
+    -fx-background-color: -coral-deep;
+}
+
+.btn-secondary {
+    -fx-background-color: -sage;
+    -fx-text-fill: white;
+    -fx-background-radius: 9;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-padding: 10 18;
+    -fx-cursor: hand;
+}
+.btn-secondary:hover {
+    -fx-background-color: -sage-deep;
+}
+
+.btn-danger {
+    -fx-background-color: transparent;
+    -fx-border-color: -coral;
+    -fx-border-radius: 9;
+    -fx-background-radius: 9;
+    -fx-text-fill: -coral-deep;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-padding: 9 17;
+    -fx-cursor: hand;
+}
+.btn-danger:hover {
+    -fx-background-color: -coral-pale;
+}
+
+.btn-ghost {
+    -fx-background-color: transparent;
+    -fx-border-color: -line;
+    -fx-border-radius: 9;
+    -fx-background-radius: 9;
+    -fx-text-fill: -ink-soft;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-padding: 9 17;
+    -fx-cursor: hand;
+}
+.btn-ghost:hover {
+    -fx-background-color: -sand;
+}
+
+.link-forgot {
+    -fx-font-size: 12.5px;
+    -fx-text-fill: -sage-deep;
+    -fx-font-weight: 700;
+    -fx-cursor: hand;
+}
+
+.secure-note {
+    -fx-font-size: 11px;
+    -fx-text-fill: -ink-faint;
+}
+
+/* ============ SELECTOR DE ROL (login) ============ */
+.role-selector {
+    -fx-background-color: -cream;
+    -fx-background-radius: 9;
+    -fx-padding: 3;
+}
+.role-toggle {
+    -fx-background-color: transparent;
+    -fx-background-radius: 7;
+    -fx-text-fill: -ink-soft;
+    -fx-font-size: 11.5px;
+    -fx-font-weight: 700;
+    -fx-padding: 8 4;
+    -fx-cursor: hand;
+}
+.role-toggle:hover {
+    -fx-background-color: -sand;
+}
+.role-toggle:selected {
+    -fx-background-color: -paper;
+    -fx-text-fill: -coral-deep;
+    -fx-effect: dropshadow(gaussian, rgba(51,47,40,0.08), 4, 0.3, 0, 1);
+}
+
+.error-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: -coral-deep;
+    -fx-font-weight: 700;
+}
+
+/* ============ DASHBOARD - SIDEBAR ============ */
+.sidebar {
+    -fx-background-color: -paper;
+    -fx-border-color: transparent -line-soft transparent transparent;
+    -fx-border-width: 0 1 0 0;
+    -fx-padding: 22 16;
+    -fx-min-width: 220;
+    -fx-pref-width: 220;
+}
+
+.sb-brand-mark {
+    -fx-background-color: -sage;
+    -fx-background-radius: 8;
+    -fx-min-width: 30;
+    -fx-min-height: 30;
+    -fx-max-width: 30;
+    -fx-max-height: 30;
+    -fx-alignment: center;
+}
+
+.sb-brand-label {
+    -fx-font-family: "Georgia";
+    -fx-font-size: 16px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -ink;
+}
+
+.sb-divider {
+    -fx-border-color: transparent transparent -line-soft transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.nav-item {
+    -fx-background-color: transparent;
+    -fx-background-radius: 8;
+    -fx-padding: 10 12;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -ink-soft;
+    -fx-alignment: center-left;
+    -fx-cursor: hand;
+    -fx-max-width: Infinity;
+}
+.nav-item:hover {
+    -fx-background-color: -sand;
+}
+.nav-item.active {
+    -fx-background-color: -role-accent-pale;
+    -fx-text-fill: -role-accent;
+}
+
+.sb-user-avatar {
+    -fx-background-color: -coral;
+    -fx-background-radius: 50%;
+    -fx-min-width: 34;
+    -fx-min-height: 34;
+    -fx-max-width: 34;
+    -fx-max-height: 34;
+    -fx-alignment: center;
+}
+.sb-user-avatar-text {
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+}
+.sb-user-name {
+    -fx-font-size: 12.5px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -ink;
+}
+.sb-user-role {
+    -fx-font-size: 11px;
+    -fx-text-fill: -ink-faint;
+}
+.sb-logout {
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -coral-deep;
+    -fx-cursor: hand;
+    -fx-background-color: transparent;
+}
+
+/* ============ DASHBOARD - MAIN ============ */
+.main-area {
+    -fx-background-color: -cream;
+}
+
+.topbar {
+    -fx-padding: 22 30 18 30;
+}
+
+.topbar-title {
+    -fx-font-family: "Georgia";
+    -fx-font-size: 22px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -ink;
+}
+
+.search-shell {
+    -fx-background-color: -paper;
+    -fx-border-color: -line;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 6 12;
+    -fx-pref-width: 220;
+    -fx-prompt-text-fill: -ink-faint;
+    -fx-font-size: 12.5px;
+}
+
+.icon-btn {
+    -fx-background-color: -paper;
+    -fx-border-color: -line;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-min-width: 34;
+    -fx-min-height: 34;
+    -fx-cursor: hand;
+}
+
+.content-area {
+    -fx-padding: 0 30 30 30;
+    -fx-background-color: -cream;
+}
+
+.welcome-text {
+    -fx-font-size: 13px;
+    -fx-text-fill: -ink-soft;
+}
+.welcome-text .bold {
+    -fx-font-weight: 700;
+    -fx-text-fill: -ink;
+}
+
+/* Stat cards */
+.stat-card {
+    -fx-background-color: -paper;
+    -fx-border-color: -line-soft;
+    -fx-border-radius: 11;
+    -fx-background-radius: 11;
+    -fx-padding: 16 17;
+}
+.stat-label {
+    -fx-font-size: 10.5px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -ink-faint;
+}
+.stat-value {
+    -fx-font-family: "Georgia";
+    -fx-font-size: 24px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -ink;
+}
+.stat-value.alert {
+    -fx-text-fill: -coral-deep;
+}
+.stat-sub {
+    -fx-font-size: 11px;
+    -fx-text-fill: -ink-faint;
+}
+.stat-sub.up {
+    -fx-text-fill: -sage-deep;
+    -fx-font-weight: 700;
+}
+.stat-icon {
+    -fx-background-radius: 7;
+    -fx-min-width: 28;
+    -fx-min-height: 28;
+    -fx-max-width: 28;
+    -fx-max-height: 28;
+    -fx-alignment: center;
+}
+.stat-icon.g { -fx-background-color: -sage-pale; }
+.stat-icon.a { -fx-background-color: -coral-pale; }
+.stat-icon.t { -fx-background-color: -sand; }
+
+/* Panels */
+.panel {
+    -fx-background-color: -paper;
+    -fx-border-color: -line-soft;
+    -fx-border-radius: 11;
+    -fx-background-radius: 11;
+    -fx-padding: 18 20;
+}
+.panel-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -ink;
+}
+.pill {
+    -fx-background-color: -sage-pale;
+    -fx-background-radius: 20;
+    -fx-text-fill: -sage-deep;
+    -fx-font-size: 10.5px;
+    -fx-font-weight: 700;
+    -fx-padding: 5 11;
+}
+
+/* Bar chart (barras manuales) */
+.bar {
+    -fx-background-color: -sage-pale-2;
+    -fx-background-radius: 5 5 0 0;
+}
+.bar.peak {
+    -fx-background-color: -coral;
+}
+.bar-label {
+    -fx-font-size: 10px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -ink-faint;
+}
+
+/* Actividad reciente */
+.activity-item {
+    -fx-padding: 10 0;
+    -fx-border-color: transparent transparent -line-soft transparent;
+    -fx-border-width: 0 0 1 0;
+}
+.a-dot {
+    -fx-background-radius: 50%;
+    -fx-min-width: 26;
+    -fx-min-height: 26;
+    -fx-max-width: 26;
+    -fx-max-height: 26;
+    -fx-alignment: center;
+}
+.a-dot.g { -fx-background-color: -sage-pale; }
+.a-dot.a { -fx-background-color: -coral-pale; }
+.a-dot.n { -fx-background-color: -sand; }
+.a-text-title {
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -ink;
+}
+.a-text-sub {
+    -fx-font-size: 10.5px;
+    -fx-text-fill: -ink-faint;
+}
+
+/* CRUD panel destacado */
+.crud-panel {
+    -fx-background-color: -sage-pale;
+    -fx-border-color: -sage-pale-2;
+    -fx-border-radius: 11;
+    -fx-background-radius: 11;
+    -fx-padding: 22 24;
+}
+.crud-icon {
+    -fx-background-color: -paper;
+    -fx-background-radius: 10;
+    -fx-min-width: 46;
+    -fx-min-height: 46;
+    -fx-max-width: 46;
+    -fx-max-height: 46;
+    -fx-alignment: center;
+}
+.crud-title {
+    -fx-font-family: "Georgia";
+    -fx-font-size: 15.5px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -ink;
+}
+.crud-desc {
+    -fx-font-size: 11.5px;
+    -fx-text-fill: -ink-soft;
+    -fx-wrap-text: true;
+}
+.crud-cta {
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -sage-deep;
+}
+.crud-glyph {
+    -fx-background-color: -coral;
+    -fx-background-radius: 10;
+    -fx-min-width: 60;
+    -fx-min-height: 60;
+    -fx-max-width: 60;
+    -fx-max-height: 60;
+    -fx-alignment: center;
+}
+
+/* Panel de usuarios */
+.users-icon {
+    -fx-background-color: -coral-pale;
+    -fx-background-radius: 9;
+    -fx-min-width: 36;
+    -fx-min-height: 36;
+    -fx-max-width: 36;
+    -fx-max-height: 36;
+    -fx-alignment: center;
+}
+.users-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -ink;
+}
+.users-desc {
+    -fx-font-size: 11.5px;
+    -fx-text-fill: -ink-faint;
+    -fx-wrap-text: true;
+}
+.badge-soft {
+    -fx-background-color: -coral-pale;
+    -fx-background-radius: 6;
+    -fx-text-fill: -coral-deep;
+    -fx-font-size: 10px;
+    -fx-font-weight: 700;
+    -fx-padding: 4 10;
+}
+.link-cta {
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -sage-deep;
+}
+
+/* Mini panels inferiores */
+.mini-panel {
+    -fx-background-color: -paper;
+    -fx-border-color: -line-soft;
+    -fx-border-radius: 11;
+    -fx-background-radius: 11;
+    -fx-padding: 16 18;
+}
+.mini-icon {
+    -fx-background-color: -sand;
+    -fx-background-radius: 8;
+    -fx-min-width: 34;
+    -fx-min-height: 34;
+    -fx-max-width: 34;
+    -fx-max-height: 34;
+    -fx-alignment: center;
+}
+.mini-panel-text {
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -ink;
+}
+
+/* ============ TABLEVIEW (pantallas CRUD) ============ */
+.table-view {
+    -fx-background-color: -paper;
+    -fx-border-color: -line-soft;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 0;
+}
+.table-view .column-header-background {
+    -fx-background-color: -cream;
+    -fx-background-radius: 8 8 0 0;
+}
+.table-view .column-header,
+.table-view .filler {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent -line-soft transparent;
+    -fx-border-width: 0 0 1 0;
+}
+.table-view .column-header .label {
+    -fx-text-fill: -ink-soft;
+    -fx-font-size: 11.5px;
+    -fx-font-weight: 700;
+}
+.table-row-cell {
+    -fx-background-color: -paper;
+    -fx-border-color: transparent transparent -line-soft transparent;
+    -fx-table-cell-border-color: transparent;
+}
+.table-row-cell:odd {
+    -fx-background-color: -cream;
+}
+.table-row-cell:selected {
+    -fx-background-color: -sage-pale;
+}
+.table-row-cell:selected .table-cell {
+    -fx-text-fill: -ink;
+}
+.table-cell {
+    -fx-text-fill: -ink;
+    -fx-font-size: 12.5px;
+    -fx-alignment: CENTER-LEFT;
+}
+
+/* ============ COMBOBOX / DATEPICKER ============ */
+.combo-box.input-field,
+.date-picker.input-field {
+    -fx-background-color: -cream;
+    -fx-border-color: -line;
+    -fx-border-radius: 9;
+    -fx-background-radius: 9;
+    -fx-padding: 2 6;
+}
+.combo-box .list-cell,
+.combo-box-popup .list-view {
+    -fx-background-color: -paper;
+    -fx-text-fill: -ink;
+}
+.date-picker .arrow-button,
+.combo-box .arrow-button {
+    -fx-background-color: transparent;
+}
