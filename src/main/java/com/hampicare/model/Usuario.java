@@ -1,39 +1,50 @@
 package com.hampicare.model;
 
-public class Usuario extends Persona {
-    public static final String ROL_ADMIN    = "ADMIN";
-    public static final String ROL_CAJERO   = "CAJERO";
+import java.util.Set;
+
+/**
+ * Usuario del sistema. Es abstracta a propósito: nunca se instancia
+ * "Usuario" directamente, siempre una de sus 3 subclases concretas
+ * (Administrador, Cajero, ReportesUsuario), cada una con su propio
+ * comportamiento.
+ *
+ * PILAR APLICADO: Herencia (extiende Persona) + Encapsulamiento
+ * (contrasena/rol/activo son privados con getters/setters validados)
+ * + Abstracción (getModulosPermitidos/getClaseColor son el "contrato"
+ * que cada rol debe cumplir).
+ */
+public abstract class Usuario extends Persona {
+
+    public static final String ROL_ADMIN = "ADMIN";
+    public static final String ROL_CAJERO = "CAJERO";
     public static final String ROL_REPORTES = "REPORTES";
-    private String  rol;
+
+    private String contrasena;
+    private String rol;
     private boolean activo;
 
-    // ---------------------------------------------------------------
-    // Constructores
-    // ---------------------------------------------------------------
-
-    public Usuario() {
+    protected Usuario() {
         super();
-        this.activo = true;
     }
 
-
-    public Usuario(int id, String nombre, String correo, String contrasena,
-                   String rol, boolean activo) {
-        super(id, nombre, correo, contrasena);  // llama al constructor de Persona
-        this.rol    = rol;
+    protected Usuario(int id, String nombre, String correo, String contrasena, String rol, boolean activo) {
+        super(id, nombre, correo);
+        setContrasena(contrasena);
+        this.rol = rol;
         this.activo = activo;
     }
 
-
-    public Usuario(String nombre, String correo, String contrasena, String rol) {
-        super(0, nombre, correo, contrasena);
-        this.rol    = rol;
-        this.activo = true;
+    public String getContrasena() {
+        return contrasena;
     }
 
-    // ---------------------------------------------------------------
-    // Getters y Setters propios
-    // ---------------------------------------------------------------
+    /** Validación obligatoria de la rúbrica: mínimo 6 caracteres. */
+    public void setContrasena(String contrasena) {
+        if (contrasena == null || contrasena.length() < 6) {
+            throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres.");
+        }
+        this.contrasena = contrasena;
+    }
 
     public String getRol() {
         return rol;
@@ -51,62 +62,45 @@ public class Usuario extends Persona {
         this.activo = activo;
     }
 
-    // ---------------------------------------------------------------
-    // Implementación de métodos abstractos de Persona (POLIMORFISMO)
-    // ---------------------------------------------------------------
+    /**
+     * POLIMORFISMO: cada rol devuelve el conjunto de módulos que puede ver.
+     * El DashboardController usa este método para mostrar/ocultar
+     * secciones — así se logra "una sola pantalla que se adapta según el
+     * rol", sin necesidad de tres dashboards distintos.
+     */
+    public abstract Set<String> getModulosPermitidos();
+
+    /** POLIMORFISMO: cada rol tiene su propio color de acento en la UI. */
+    public abstract String getClaseColorRol();
+
+    /** POLIMORFISMO: indica si el rol puede eliminar registros (solo lectura vs operativo). */
+    public abstract boolean puedeEliminar();
 
     @Override
-    public String getRolDescripcion() {
-        switch (rol) {
+    public String getDescripcionRol() {
+        return rol;
+    }
+
+    /**
+     * Fábrica estática: dado el rol guardado en la base de datos, crea la
+     * subclase concreta correspondiente. Esto evita usar 'if/else' de rol
+     * por todo el código: una vez creado el objeto correcto, cada método
+     * heredado ya se comporta distinto por sí mismo (polimorfismo real).
+     */
+    public static Usuario crearPorRol(int id, String nombre, String correo,
+                                      String contrasena, String rol, boolean activo) {
+        if (rol == null) {
+            throw new IllegalArgumentException("El rol no puede ser nulo.");
+        }
+        switch (rol.trim().toUpperCase()) {
             case ROL_ADMIN:
-                return "Administrador — acceso total al sistema";
+                return new Administrador(id, nombre, correo, contrasena, activo);
             case ROL_CAJERO:
-                return "Cajero — registro de ventas e inventario";
+                return new Cajero(id, nombre, correo, contrasena, activo);
             case ROL_REPORTES:
-                return "Reportes — solo lectura y exportación";
+                return new ReportesUsuario(id, nombre, correo, contrasena, activo);
             default:
-                return "Rol desconocido";
+                throw new IllegalArgumentException("Rol no reconocido: " + rol);
         }
-    }
-
-
-    @Override
-    public boolean esValido() {
-        if (getNombre()     == null || getNombre().trim().isEmpty())     return false;
-        if (getCorreo()     == null || getCorreo().trim().isEmpty())     return false;
-        if (getContrasena() == null || getContrasena().length() < 6)    return false;
-        if (!ROL_ADMIN.equals(rol) && !ROL_CAJERO.equals(rol) && !ROL_REPORTES.equals(rol)) {
-            return false;
-        }
-        return true;
-    }
-
-    // ---------------------------------------------------------------
-    // Métodos de conveniencia (útiles en el controlador)
-    // ---------------------------------------------------------------
-
-    public boolean esAdmin() {
-        return ROL_ADMIN.equals(rol);
-    }
-
-    public boolean esCajero() {
-        return ROL_CAJERO.equals(rol);
-    }
-
-    public boolean esReportes() {
-        return ROL_REPORTES.equals(rol);
-    }
-
-    // ---------------------------------------------------------------
-    // toString
-    // ---------------------------------------------------------------
-
-    @Override
-    public String toString() {
-        return "Usuario{id=" + getId()
-                + ", nombre='" + getNombre() + "'"
-                + ", correo='" + getCorreo() + "'"
-                + ", rol='" + rol + "'"
-                + ", activo=" + activo + "}";
     }
 }
