@@ -39,3 +39,4 @@ Para asegurar que ambos desarrolladores manejen la misma versión y entorno, eje
 
 ```bash
 docker-compose up -d
+```

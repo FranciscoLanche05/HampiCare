@@ -74,7 +74,7 @@ public class UsuarioDAO implements ICRUD<Usuario> {
     /** Valida credenciales de login y devuelve el Usuario (subclase correcta) o null. */
     public Usuario autenticar(String correo, String contrasena) throws SQLException {
         String sql = "SELECT id, nombre, correo, contrasena, rol, activo FROM usuarios " +
-                "WHERE correo=? AND contrasena=? AND activo=1";
+                "WHERE correo=? AND contrasena=? AND activo=true";
         try (Connection c = Conexion.getInstancia().getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, correo);

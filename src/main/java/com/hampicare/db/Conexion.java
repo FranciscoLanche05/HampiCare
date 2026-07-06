@@ -18,9 +18,10 @@ public final class Conexion {
     private static Conexion instancia;
     private Connection conn;
 
-    private static final String URL = "jdbc:postgresql://localhost:5432/hampipharma_db";
-    private static final String USUARIO = "postgres";
-    private static final String CLAVE = "";
+    // Se obtienen las variables pasadas por Launch4j (JVM options: -DSUPABASE_URL=...)
+    private static final String URL = System.getProperty("SUPABASE_URL");
+    private static final String USUARIO = System.getProperty("SUPABASE_USER");
+    private static final String CLAVE = System.getProperty("SUPABASE_PASSWORD");
 
     private Conexion() {
         try {
