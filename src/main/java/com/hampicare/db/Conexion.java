@@ -18,8 +18,8 @@ public final class Conexion {
     private static Conexion instancia;
     private Connection conn;
 
-    // Configuración para desarrollo local con H2
-    private static final String URL = "jdbc:h2:./hampicare_db;MODE=PostgreSQL;INIT=RUNSCRIPT FROM './src/main/java/com/hampicare/db/Script.sql'";
+    // Configuración para desarrollo local con H2 (En memoria, se reinicia al cerrar la app)
+    private static final String URL = "jdbc:h2:mem:hampicare_db;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;INIT=RUNSCRIPT FROM './src/main/java/com/hampicare/db/Script.sql'";
     private static final String USUARIO = "sa";
     private static final String CLAVE = "";
 
