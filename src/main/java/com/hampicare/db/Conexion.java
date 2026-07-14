@@ -18,10 +18,10 @@ public final class Conexion {
     private static Conexion instancia;
     private Connection conn;
 
-    // Se obtienen las variables pasadas por Launch4j (JVM options: -DSUPABASE_URL=...)
-    private static final String URL = System.getProperty("SUPABASE_URL");
-    private static final String USUARIO = System.getProperty("SUPABASE_USER");
-    private static final String CLAVE = System.getProperty("SUPABASE_PASSWORD");
+    // Configuración para desarrollo local con H2
+    private static final String URL = "jdbc:h2:./hampicare_db;MODE=PostgreSQL;INIT=RUNSCRIPT FROM './src/main/java/com/hampicare/db/Script.sql'";
+    private static final String USUARIO = "sa";
+    private static final String CLAVE = "";
 
     private Conexion() {
         try {
