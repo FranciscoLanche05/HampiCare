@@ -10,12 +10,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Acceso a datos de la tabla USUARIOS. Implementa ICRUD (abstracción) y
- * usa la fábrica Usuario.crearPorRol(...) para devolver siempre la
- * subclase correcta (Administrador / Cajero / ReportesUsuario) —
- * polimorfismo aplicado desde el origen de los datos.
- */
 public class UsuarioDAO implements ICRUD<Usuario> {
 
     @Override
@@ -71,7 +65,7 @@ public class UsuarioDAO implements ICRUD<Usuario> {
         }
     }
 
-    /** Valida credenciales de login y devuelve el Usuario (subclase correcta) o null. */
+    /** Valida credenciales de login */
     public Usuario autenticar(String correo, String contrasena) throws SQLException {
         String sql = "SELECT id, nombre, correo, contrasena, rol, activo FROM usuarios " +
                 "WHERE correo=? AND contrasena=? AND activo=1";

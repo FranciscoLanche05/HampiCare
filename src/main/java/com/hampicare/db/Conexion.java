@@ -4,15 +4,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-/**
- * PATRÓN SINGLETON: garantiza que exista una única instancia de la
- * conexión a la base de datos en toda la aplicación.
- *
- * IMPORTANTE: ajusta URL / USUARIO / CLAVE a tu entorno antes de correr
- * la app. El script de creación de la BD está en /sql/schema.sql
- * (recuerda: en PostgreSQL hay que crear la base de datos "hampipharma_db"
- * ANTES de correr el script, con: CREATE DATABASE hampipharma_db;)
- */
 public final class Conexion {
 
     private static Conexion instancia;

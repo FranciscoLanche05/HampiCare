@@ -2,11 +2,6 @@ package com.hampicare.model;
 
 import java.util.Set;
 
-/**
- * Rol con acceso total: CRUD completo, gestión de usuarios, reportes y
- * configuración del sistema. Color de acento: sage (verde salvia, ya
- * usado en el diseño original de Hampi Pharma).
- */
 public class Administrador extends Usuario {
 
     public Administrador() {

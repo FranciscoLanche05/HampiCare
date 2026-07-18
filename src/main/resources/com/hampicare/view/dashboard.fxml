@@ -41,6 +41,8 @@
                     maxWidth="Infinity" onAction="#showHome"/>
             <Button fx:id="navInventario" text="Inventario" styleClass="nav-item"
                     maxWidth="Infinity" onAction="#showInventario"/>
+            <Button fx:id="navVentas" text="Punto de venta" styleClass="nav-item"
+                    maxWidth="Infinity" onAction="#showVentas"/>
             <Button fx:id="navUsuarios" text="Gestión de usuarios" styleClass="nav-item"
                     maxWidth="Infinity" onAction="#showUsuarios"/>
             <Button fx:id="navReportes" text="Reportes" styleClass="nav-item"
@@ -87,6 +89,18 @@
                             <Text fx:id="welcomeNameLabel" text="—" styleClass="bold"/>
                             <Text text=". Sesión iniciada correctamente."/>
                         </TextFlow>
+
+                        <HBox fx:id="ventasHoyCard" spacing="14" visible="false" managed="false">
+                            <VBox styleClass="stat-card" spacing="6" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+                                <HBox alignment="CENTER_LEFT">
+                                    <Label text="MIS VENTAS DE HOY" styleClass="stat-label"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <StackPane styleClass="stat-icon, g"><Label text="💰"/></StackPane>
+                                </HBox>
+                                <Label fx:id="ventasHoyValueLabel" text="$0.00" styleClass="stat-value"/>
+                                <Label fx:id="ventasHoyCountLabel" text="0 ventas realizadas hoy" styleClass="stat-sub"/>
+                            </VBox>
+                        </HBox>
 
                         <GridPane hgap="14" vgap="14">
                             <columnConstraints>
@@ -197,6 +211,98 @@
                                     <TableColumn fx:id="colStockMed" text="Stock" prefWidth="80"/>
                                     <TableColumn fx:id="colLoteMed" text="Lote" prefWidth="100"/>
                                     <TableColumn fx:id="colFechaMed" text="Vencimiento" prefWidth="120"/>
+                                </columns>
+                            </TableView>
+                        </VBox>
+                    </VBox>
+
+                    <!-- ===================== VENTAS (punto de venta, solo Cajero) ===================== -->
+                    <VBox fx:id="ventasView" styleClass="content-area" spacing="18" visible="false" managed="false">
+
+                        <!-- Punto de venta -->
+                        <VBox styleClass="panel" spacing="14">
+                            <Label text="Nueva venta" styleClass="panel-title"/>
+                            <GridPane hgap="12" vgap="10">
+                                <columnConstraints>
+                                    <ColumnConstraints percentWidth="45"/>
+                                    <ColumnConstraints percentWidth="20"/>
+                                    <ColumnConstraints percentWidth="35"/>
+                                </columnConstraints>
+                                <VBox spacing="5" GridPane.columnIndex="0">
+                                    <Label text="Medicamento" styleClass="field-label"/>
+                                    <ComboBox fx:id="ventaMedicamentoCombo" maxWidth="Infinity" styleClass="input-field"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="1">
+                                    <Label text="Cantidad" styleClass="field-label"/>
+                                    <TextField fx:id="ventaCantidadField" styleClass="input-field" promptText="0"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="2" alignment="BOTTOM_LEFT">
+                                    <Button fx:id="btnAgregarCarrito" text="+ Agregar al carrito" styleClass="btn-primary"
+                                            maxWidth="Infinity" onAction="#handleAgregarCarrito"/>
+                                </VBox>
+                            </GridPane>
+
+                            <TableView fx:id="tablaCarrito" prefHeight="180">
+                                <columns>
+                                    <TableColumn fx:id="colCarritoNombre" text="Producto" prefWidth="220"/>
+                                    <TableColumn fx:id="colCarritoCantidad" text="Cantidad" prefWidth="90"/>
+                                    <TableColumn fx:id="colCarritoPrecio" text="P. Unitario" prefWidth="110"/>
+                                    <TableColumn fx:id="colCarritoSubtotal" text="Subtotal" prefWidth="110"/>
+                                </columns>
+                            </TableView>
+
+                            <HBox alignment="CENTER_RIGHT" spacing="16">
+                                <Label fx:id="totalVentaLabel" text="Total: $0.00" styleClass="panel-title"/>
+                            </HBox>
+
+                            <HBox spacing="10">
+                                <Button fx:id="btnRegistrarVenta" text="✓ Registrar venta" styleClass="btn-primary"
+                                        onAction="#handleRegistrarVenta"/>
+                                <Button fx:id="btnQuitarDelCarrito" text="Quitar seleccionado" styleClass="btn-secondary"
+                                        onAction="#handleQuitarDelCarrito"/>
+                                <Button fx:id="btnVaciarCarrito" text="Vaciar carrito" styleClass="btn-ghost"
+                                        onAction="#handleVaciarCarrito"/>
+                            </HBox>
+                        </VBox>
+
+                        <!-- Registrar ingreso de mercadería -->
+                        <VBox styleClass="panel" spacing="14">
+                            <Label text="Registrar ingreso de mercadería" styleClass="panel-title"/>
+                            <GridPane hgap="12" vgap="10">
+                                <columnConstraints>
+                                    <ColumnConstraints percentWidth="45"/>
+                                    <ColumnConstraints percentWidth="20"/>
+                                    <ColumnConstraints percentWidth="35"/>
+                                </columnConstraints>
+                                <VBox spacing="5" GridPane.columnIndex="0">
+                                    <Label text="Medicamento" styleClass="field-label"/>
+                                    <ComboBox fx:id="entradaMedicamentoCombo" maxWidth="Infinity" styleClass="input-field"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="1">
+                                    <Label text="Cantidad recibida" styleClass="field-label"/>
+                                    <TextField fx:id="entradaCantidadField" styleClass="input-field" promptText="0"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="2" alignment="BOTTOM_LEFT">
+                                    <Button fx:id="btnRegistrarEntrada" text="📦 Registrar ingreso" styleClass="btn-secondary"
+                                            maxWidth="Infinity" onAction="#handleRegistrarEntrada"/>
+                                </VBox>
+                            </GridPane>
+                        </VBox>
+
+                        <!-- Historial de ventas propias -->
+                        <VBox styleClass="panel" spacing="10" VBox.vgrow="ALWAYS">
+                            <HBox alignment="CENTER_LEFT">
+                                <Label text="Mis ventas" styleClass="panel-title"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Button fx:id="btnAnularVenta" text="Anular venta seleccionada" styleClass="btn-danger"
+                                        onAction="#handleAnularVenta"/>
+                            </HBox>
+                            <TableView fx:id="tablaHistorialVentas" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="colVentaId" text="ID" prefWidth="60"/>
+                                    <TableColumn fx:id="colVentaFactura" text="Factura" prefWidth="120"/>
+                                    <TableColumn fx:id="colVentaFecha" text="Fecha" prefWidth="160"/>
+                                    <TableColumn fx:id="colVentaTotal" text="Total" prefWidth="100"/>
                                 </columns>
                             </TableView>
                         </VBox>

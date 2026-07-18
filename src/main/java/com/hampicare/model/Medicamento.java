@@ -2,10 +2,6 @@ package com.hampicare.model;
 
 import java.time.LocalDate;
 
-/**
- * Recurso principal del sistema (equivalente a "producto" en otras
- * temáticas). Atributos privados + get/set validados = ENCAPSULAMIENTO.
- */
 public class Medicamento {
 
     private int id;
@@ -107,7 +103,7 @@ public class Medicamento {
         this.proveedorId = proveedorId;
     }
 
-    /** true si quedan 15 unidades o menos (para la alerta de "stock bajo"). */
+    /** true si quedan 15 unidades o menos (alerta de "stock bajo"). */
     public boolean isStockBajo() {
         return stock <= 15;
     }

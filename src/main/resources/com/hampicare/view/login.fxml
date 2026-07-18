@@ -26,15 +26,22 @@
     <HBox styleClass="login-card" maxWidth="900" maxHeight="560" prefWidth="900" prefHeight="560">
 
         <!-- ===== Columna izquierda: marca ===== -->
-        <VBox styleClass="login-aside" spacing="14" alignment="CENTER" HBox.hgrow="ALWAYS" prefWidth="400">
-            <ImageView fitWidth="190" preserveRatio="true">
+        <StackPane HBox.hgrow="ALWAYS" prefWidth="400" maxWidth="400">
+            <ImageView fitWidth="400" fitHeight="560" preserveRatio="false">
                 <image>
-                    <Image url="@../images/logo.png"/>
+                    <Image url="@../images/fondo2.jpg"/>
                 </image>
             </ImageView>
-            <Region VBox.vgrow="ALWAYS"/>
-            <Label text="🔒 Sesión cifrada de extremo a extremo" styleClass="login-foot"/>
-        </VBox>
+            <VBox styleClass="login-aside-overlay" spacing="14" alignment="CENTER">
+                <ImageView fitWidth="190" preserveRatio="true">
+                    <image>
+                        <Image url="@../images/logo.png"/>
+                    </image>
+                </ImageView>
+                <Region VBox.vgrow="ALWAYS"/>
+                <Label text="🔒 Sesión cifrada de extremo a extremo" styleClass="login-foot"/>
+            </VBox>
+        </StackPane>
 
         <!-- ===== Columna derecha: formulario ===== -->
         <VBox styleClass="login-main" alignment="CENTER" HBox.hgrow="ALWAYS" prefWidth="500">

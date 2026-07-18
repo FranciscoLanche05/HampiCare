@@ -29,11 +29,7 @@ public class Main extends Application {
         stage.show();
     }
 
-    /**
-     * Carga el ícono de la ventana de forma segura: si el archivo no
-     * existe o la ruta está mal, solo avisa por consola y sigue con el
-     * ícono por defecto — NUNCA debe tumbar el arranque de la app.
-     */
+
     private static void cargarIconoVentana(Stage stage) {
         String ruta = "/com/hampicare/images/logo.png";
         try (InputStream is = Main.class.getResourceAsStream(ruta)) {
@@ -48,7 +44,7 @@ public class Main extends Application {
         }
     }
 
-    /** Vuelve a la pantalla de login (usado por logout). */
+    /** Vuelve a la pantalla de login. */
     public static void irALogin() throws Exception {
         Parent root = FXMLLoader.load(Main.class.getResource("/com/hampicare/view/login.fxml"));
         primaryStage.setScene(new Scene(root, 1000, 600));

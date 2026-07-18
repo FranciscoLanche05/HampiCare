@@ -1,6 +1,6 @@
 package com.hampicare.model;
 
-/** Parámetros generales del sistema (fila única en la tabla CONFIGURACION). */
+/** Parámetros generales del sistema. */
 public class Configuracion {
 
     private int id = 1;

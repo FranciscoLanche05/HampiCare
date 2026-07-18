@@ -2,10 +2,6 @@ package com.hampicare.model;
 
 import java.util.Set;
 
-/**
- * Rol de solo lectura: ve estadísticas, gráficos y puede exportar
- * reportes, pero no puede modificar ningún dato. Color de acento: morado.
- */
 public class ReportesUsuario extends Usuario {
 
     public ReportesUsuario() {
