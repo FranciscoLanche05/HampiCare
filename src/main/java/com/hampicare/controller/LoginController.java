@@ -40,7 +40,9 @@ public class LoginController {
         String rolSeleccionado = (String) seleccionado.getUserData();
 
         try {
+            System.out.println("[LOGIN] Intentando autenticar: " + correo);
             Usuario usuario = usuarioDAO.autenticar(correo, contrasena);
+            System.out.println("[LOGIN] Resultado autenticacion: " + (usuario != null ? usuario.getNombre() + " (" + usuario.getRol() + ")" : "null"));
 
             if (usuario == null) {
                 Alertas.error("Usuario o contraseña incorrectos.");
@@ -54,13 +56,19 @@ public class LoginController {
                 return;
             }
 
+            System.out.println("[LOGIN] Navegando al dashboard...");
             // Redirección al dashboard único por rol
             Main.irADashboard(usuario);
+            System.out.println("[LOGIN] Dashboard cargado correctamente.");
 
         } catch (SQLException e) {
+            System.err.println("[LOGIN] SQLException: " + e.getMessage());
+            e.printStackTrace();
             Alertas.error("No se pudo conectar a la base de datos.\n" +
                     "Revisa la configuración en db.Conexion.\n\nDetalle: " + e.getMessage());
         } catch (Exception e) {
+            System.err.println("[LOGIN] Exception: " + e.getMessage());
+            e.printStackTrace();
             Alertas.error("Ocurrió un error inesperado: " + e.getMessage());
         }
     }

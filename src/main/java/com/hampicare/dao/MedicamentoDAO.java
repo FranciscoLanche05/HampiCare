@@ -9,7 +9,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class MedicamentoDAO implements ICRUD<Medicamento> {
 
@@ -108,5 +110,18 @@ public class MedicamentoDAO implements ICRUD<Medicamento> {
                 fv != null ? fv.toLocalDate() : null,
                 rs.getInt("proveedor_id")
         );
+    }
+
+    public Set<String> obtenerCategoriasUnicas() throws SQLException {
+        String sql = "SELECT DISTINCT categoria FROM medicamentos ORDER BY categoria";
+        Set<String> categorias = new LinkedHashSet<>();
+        try (Connection c = Conexion.getInstancia().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                categorias.add(rs.getString("categoria"));
+            }
+        }
+        return categorias;
     }
 }

@@ -32,8 +32,35 @@ CREATE TABLE usuarios (
 CREATE TABLE proveedores (
                              id       SERIAL       PRIMARY KEY,
                              nombre   VARCHAR(150) NOT NULL,
-                             contacto VARCHAR(100),
+                             correo   VARCHAR(100),
                              telefono VARCHAR(20)
+);
+
+
+-- -------------------------------------------------------------------
+-- TABLA: clientes
+-- -------------------------------------------------------------------
+CREATE TABLE clientes (
+                          id        SERIAL       PRIMARY KEY,
+                          nombres   VARCHAR(150) NOT NULL,
+                          apellidos VARCHAR(150) NOT NULL,
+                          correo    VARCHAR(100),
+                          cedula    VARCHAR(20)  NOT NULL UNIQUE,
+                          telefono  VARCHAR(20),
+                          sector    VARCHAR(100)
+);
+
+
+-- -------------------------------------------------------------------
+-- TABLA: compras
+-- -------------------------------------------------------------------
+CREATE TABLE compras (
+                         id              SERIAL        PRIMARY KEY,
+                         proveedor_id    INTEGER       NOT NULL REFERENCES proveedores(id) ON DELETE RESTRICT,
+                         medicamento_id  INTEGER       NOT NULL REFERENCES medicamentos(id) ON DELETE RESTRICT,
+                         cantidad        INTEGER       NOT NULL CHECK (cantidad > 0),
+                         precio_compra   DECIMAL(10,2) NOT NULL CHECK (precio_compra >= 0),
+                         fecha           TIMESTAMP     NOT NULL DEFAULT NOW()
 );
 
 
@@ -58,6 +85,7 @@ CREATE TABLE medicamentos (
 CREATE TABLE ventas (
                         id             SERIAL        PRIMARY KEY,
                         usuario_id     INTEGER       NOT NULL REFERENCES usuarios(id) ON DELETE RESTRICT,
+                        cliente_id     INTEGER       REFERENCES clientes(id) ON DELETE SET NULL,
                         numero_factura VARCHAR(20)   NOT NULL UNIQUE,
                         fecha          TIMESTAMP     NOT NULL DEFAULT NOW(),
                         total          DECIMAL(10,2) NOT NULL DEFAULT 0

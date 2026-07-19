@@ -18,7 +18,7 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) throws Exception {
         primaryStage = stage;
-        stage.setTitle("Hampi Pharma — Cuidamos tu salud");
+        stage.setTitle("HampiCare — Cuidamos tu salud");
 
         cargarIconoVentana(stage);
 

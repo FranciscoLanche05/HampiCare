@@ -26,7 +26,7 @@ public class ConfiguracionDAO {
                 );
             }
         }
-        return new Configuracion(1, "Hampi Pharma", 0.15, 15, 30);
+        return new Configuracion(1, "HampiCare", 0.15, 15, 30);
     }
 
     public void actualizar(Configuracion cfg) throws SQLException {

@@ -38,5 +38,11 @@ build/
 ### Mac OS ###
 .DS_Store
 
+### IntelliJ Output ###
+out/
+
+### H2 Database Files ###
+hampicare_db*
+
 ### Environment Variables ###
 .env

@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.ScrollPane?>
@@ -11,6 +12,9 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
@@ -26,23 +30,29 @@
             prefWidth="1280" prefHeight="800"
             stylesheets="@../css/styles.css">
 
-    <!-- ============ SIDEBAR (igual para los 3 roles; se adapta por código) ============ -->
+    <!-- ============ SIDEBAR ============ -->
     <left>
         <VBox styleClass="sidebar" spacing="4">
             <HBox styleClass="sb-divider" spacing="10" alignment="CENTER_LEFT">
                 <StackPane styleClass="sb-brand-mark">
                     <Label text="H" textFill="WHITE" style="-fx-font-weight:700;-fx-font-size:14px;"/>
                 </StackPane>
-                <Label text="Hampi Pharma" styleClass="sb-brand-label"/>
+                <Label text="HampiCare" styleClass="sb-brand-label"/>
                 <VBox.margin><Insets bottom="22"/></VBox.margin>
             </HBox>
 
-            <Button fx:id="navHome" text="Panel principal" styleClass="nav-item, active"
+            <Button fx:id="navHome" text="Panel principal" styleClass="nav-item"
                     maxWidth="Infinity" onAction="#showHome"/>
             <Button fx:id="navInventario" text="Inventario" styleClass="nav-item"
                     maxWidth="Infinity" onAction="#showInventario"/>
-            <Button fx:id="navVentas" text="Punto de venta" styleClass="nav-item"
+            <Button fx:id="navVentas" text="Ventas" styleClass="nav-item"
                     maxWidth="Infinity" onAction="#showVentas"/>
+            <Button fx:id="navClientes" text="Clientes" styleClass="nav-item"
+                    maxWidth="Infinity" onAction="#showClientes"/>
+            <Button fx:id="navProveedores" text="Proveedores" styleClass="nav-item"
+                    maxWidth="Infinity" onAction="#showProveedores"/>
+            <Button fx:id="navCompras" text="Compras" styleClass="nav-item"
+                    maxWidth="Infinity" onAction="#showCompras"/>
             <Button fx:id="navUsuarios" text="Gestión de usuarios" styleClass="nav-item"
                     maxWidth="Infinity" onAction="#showUsuarios"/>
             <Button fx:id="navReportes" text="Reportes" styleClass="nav-item"
@@ -63,8 +73,7 @@
                 <VBox.margin><Insets top="16" bottom="14"/></VBox.margin>
             </HBox>
 
-            <!-- Botón de cerrar sesión, visible siempre (requisito obligatorio) -->
-            <Button text="⎋  Cerrar sesión" styleClass="sb-logout" onAction="#handleLogout"/>
+            <Button text="Cerrar sesión" styleClass="sb-logout" onAction="#handleLogout"/>
         </VBox>
     </left>
 
@@ -75,8 +84,6 @@
             <HBox styleClass="topbar" alignment="CENTER_LEFT" spacing="14">
                 <Label fx:id="sectionTitleLabel" text="Panel principal" styleClass="topbar-title"/>
                 <Region HBox.hgrow="ALWAYS"/>
-                <TextField styleClass="search-shell" promptText="🔍  Buscar..."/>
-                <Button text="🔔" styleClass="icon-btn"/>
             </HBox>
 
             <ScrollPane fitToWidth="true" styleClass="main-area">
@@ -95,9 +102,9 @@
                                 <HBox alignment="CENTER_LEFT">
                                     <Label text="MIS VENTAS DE HOY" styleClass="stat-label"/>
                                     <Region HBox.hgrow="ALWAYS"/>
-                                    <StackPane styleClass="stat-icon, g"><Label text="💰"/></StackPane>
+                                    <StackPane styleClass="stat-icon, g"><Label fx:id="ventasHoyIconLabel"/></StackPane>
                                 </HBox>
-                                <Label fx:id="ventasHoyValueLabel" text="$0.00" styleClass="stat-value"/>
+                                <Label fx:id="ventasHoyValueLabel" text="0.00" styleClass="stat-value"/>
                                 <Label fx:id="ventasHoyCountLabel" text="0 ventas realizadas hoy" styleClass="stat-sub"/>
                             </VBox>
                         </HBox>
@@ -107,22 +114,20 @@
                                 <ColumnConstraints percentWidth="50"/>
                                 <ColumnConstraints percentWidth="50"/>
                             </columnConstraints>
-
                             <VBox styleClass="stat-card" spacing="6" GridPane.columnIndex="0">
                                 <HBox alignment="CENTER_LEFT">
                                     <Label text="STOCK BAJO" styleClass="stat-label"/>
                                     <Region HBox.hgrow="ALWAYS"/>
-                                    <StackPane styleClass="stat-icon, a"><Label text="⚠"/></StackPane>
+                                    <StackPane styleClass="stat-icon, a"><Label text="!"/></StackPane>
                                 </HBox>
                                 <Label fx:id="stockBajoValueLabel" text="0" styleClass="stat-value, alert"/>
                                 <Label text="Artículos requieren atención" styleClass="stat-sub"/>
                             </VBox>
-
                             <VBox styleClass="stat-card" spacing="6" GridPane.columnIndex="1">
                                 <HBox alignment="CENTER_LEFT">
                                     <Label text="USUARIOS ACTIVOS" styleClass="stat-label"/>
                                     <Region HBox.hgrow="ALWAYS"/>
-                                    <StackPane styleClass="stat-icon, g"><Label text="👤"/></StackPane>
+                                    <StackPane styleClass="stat-icon, g"><Label text="U"/></StackPane>
                                 </HBox>
                                 <Label fx:id="usuariosActivosValueLabel" text="0" styleClass="stat-value"/>
                                 <Label text="Con acceso al sistema" styleClass="stat-sub"/>
@@ -134,7 +139,6 @@
                                 <ColumnConstraints percentWidth="62"/>
                                 <ColumnConstraints percentWidth="38"/>
                             </columnConstraints>
-
                             <VBox styleClass="panel" spacing="14" GridPane.columnIndex="0">
                                 <HBox alignment="CENTER_LEFT">
                                     <Label text="Resumen de ventas" styleClass="panel-title"/>
@@ -143,7 +147,6 @@
                                 </HBox>
                                 <HBox fx:id="barsContainer" spacing="14" alignment="BOTTOM_CENTER" prefHeight="140"/>
                             </VBox>
-
                             <VBox styleClass="panel" spacing="4" GridPane.columnIndex="1">
                                 <Label text="Actividad reciente" styleClass="panel-title">
                                     <VBox.margin><Insets bottom="10"/></VBox.margin>
@@ -153,7 +156,7 @@
                         </GridPane>
                     </VBox>
 
-                    <!-- ===================== INVENTARIO (CRUD) ===================== -->
+                    <!-- ===================== INVENTARIO ===================== -->
                     <VBox fx:id="inventarioView" styleClass="content-area" spacing="18" visible="false" managed="false">
                         <VBox styleClass="panel" spacing="14">
                             <Label text="Registro de medicamentos" styleClass="panel-title"/>
@@ -169,7 +172,7 @@
                                 </VBox>
                                 <VBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="0">
                                     <Label text="Categoría" styleClass="field-label"/>
-                                    <TextField fx:id="categoriaMedField" styleClass="input-field"/>
+                                    <ComboBox fx:id="categoriaMedField" maxWidth="Infinity" styleClass="input-field" editable="true"/>
                                 </VBox>
                                 <VBox spacing="5" GridPane.columnIndex="2" GridPane.rowIndex="0">
                                     <Label text="Precio" styleClass="field-label"/>
@@ -199,9 +202,12 @@
                                 <Button fx:id="btnLimpiarMed" text="Limpiar" styleClass="btn-ghost" onAction="#handleLimpiarMedicamento"/>
                             </HBox>
                         </VBox>
-
                         <VBox styleClass="panel" spacing="10" VBox.vgrow="ALWAYS">
-                            <Label text="Medicamentos registrados" styleClass="panel-title"/>
+                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                <Label text="Medicamentos registrados" styleClass="panel-title"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <TextField fx:id="searchMedicamentos" promptText="Buscar medicamento..." prefWidth="250"/>
+                            </HBox>
                             <TableView fx:id="tablaMedicamentos" VBox.vgrow="ALWAYS">
                                 <columns>
                                     <TableColumn fx:id="colIdMed" text="ID" prefWidth="50"/>
@@ -216,17 +222,16 @@
                         </VBox>
                     </VBox>
 
-                    <!-- ===================== VENTAS (punto de venta, solo Cajero) ===================== -->
+                    <!-- ===================== VENTAS ===================== -->
                     <VBox fx:id="ventasView" styleClass="content-area" spacing="18" visible="false" managed="false">
-
-                        <!-- Punto de venta -->
                         <VBox styleClass="panel" spacing="14">
                             <Label text="Nueva venta" styleClass="panel-title"/>
                             <GridPane hgap="12" vgap="10">
                                 <columnConstraints>
-                                    <ColumnConstraints percentWidth="45"/>
+                                    <ColumnConstraints percentWidth="30"/>
                                     <ColumnConstraints percentWidth="20"/>
-                                    <ColumnConstraints percentWidth="35"/>
+                                    <ColumnConstraints percentWidth="25"/>
+                                    <ColumnConstraints percentWidth="25"/>
                                 </columnConstraints>
                                 <VBox spacing="5" GridPane.columnIndex="0">
                                     <Label text="Medicamento" styleClass="field-label"/>
@@ -236,12 +241,15 @@
                                     <Label text="Cantidad" styleClass="field-label"/>
                                     <TextField fx:id="ventaCantidadField" styleClass="input-field" promptText="0"/>
                                 </VBox>
-                                <VBox spacing="5" GridPane.columnIndex="2" alignment="BOTTOM_LEFT">
+                                <VBox spacing="5" GridPane.columnIndex="2">
+                                    <Label text="Cliente" styleClass="field-label"/>
+                                    <ComboBox fx:id="ventaClienteCombo" maxWidth="Infinity" styleClass="input-field"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="3" alignment="BOTTOM_LEFT">
                                     <Button fx:id="btnAgregarCarrito" text="+ Agregar al carrito" styleClass="btn-primary"
                                             maxWidth="Infinity" onAction="#handleAgregarCarrito"/>
                                 </VBox>
                             </GridPane>
-
                             <TableView fx:id="tablaCarrito" prefHeight="180">
                                 <columns>
                                     <TableColumn fx:id="colCarritoNombre" text="Producto" prefWidth="220"/>
@@ -250,13 +258,11 @@
                                     <TableColumn fx:id="colCarritoSubtotal" text="Subtotal" prefWidth="110"/>
                                 </columns>
                             </TableView>
-
                             <HBox alignment="CENTER_RIGHT" spacing="16">
                                 <Label fx:id="totalVentaLabel" text="Total: $0.00" styleClass="panel-title"/>
                             </HBox>
-
                             <HBox spacing="10">
-                                <Button fx:id="btnRegistrarVenta" text="✓ Registrar venta" styleClass="btn-primary"
+                                <Button fx:id="btnRegistrarVenta" text="Registrar venta" styleClass="btn-primary"
                                         onAction="#handleRegistrarVenta"/>
                                 <Button fx:id="btnQuitarDelCarrito" text="Quitar seleccionado" styleClass="btn-secondary"
                                         onAction="#handleQuitarDelCarrito"/>
@@ -265,50 +271,196 @@
                             </HBox>
                         </VBox>
 
-                        <!-- Registrar ingreso de mercadería -->
-                        <VBox styleClass="panel" spacing="14">
-                            <Label text="Registrar ingreso de mercadería" styleClass="panel-title"/>
-                            <GridPane hgap="12" vgap="10">
-                                <columnConstraints>
-                                    <ColumnConstraints percentWidth="45"/>
-                                    <ColumnConstraints percentWidth="20"/>
-                                    <ColumnConstraints percentWidth="35"/>
-                                </columnConstraints>
-                                <VBox spacing="5" GridPane.columnIndex="0">
-                                    <Label text="Medicamento" styleClass="field-label"/>
-                                    <ComboBox fx:id="entradaMedicamentoCombo" maxWidth="Infinity" styleClass="input-field"/>
-                                </VBox>
-                                <VBox spacing="5" GridPane.columnIndex="1">
-                                    <Label text="Cantidad recibida" styleClass="field-label"/>
-                                    <TextField fx:id="entradaCantidadField" styleClass="input-field" promptText="0"/>
-                                </VBox>
-                                <VBox spacing="5" GridPane.columnIndex="2" alignment="BOTTOM_LEFT">
-                                    <Button fx:id="btnRegistrarEntrada" text="📦 Registrar ingreso" styleClass="btn-secondary"
-                                            maxWidth="Infinity" onAction="#handleRegistrarEntrada"/>
-                                </VBox>
-                            </GridPane>
-                        </VBox>
-
-                        <!-- Historial de ventas propias -->
                         <VBox styleClass="panel" spacing="10" VBox.vgrow="ALWAYS">
-                            <HBox alignment="CENTER_LEFT">
-                                <Label text="Mis ventas" styleClass="panel-title"/>
+                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                <Label text="Historial de ventas" styleClass="panel-title"/>
                                 <Region HBox.hgrow="ALWAYS"/>
-                                <Button fx:id="btnAnularVenta" text="Anular venta seleccionada" styleClass="btn-danger"
+                                <TextField fx:id="searchVentas" promptText="Buscar venta..." prefWidth="250"/>
+                                <Button fx:id="btnGenerarPDF" text="Generar PDF" styleClass="btn-secondary"
+                                        onAction="#handleGenerarPDF"/>
+                                <Button fx:id="btnAnularVenta" text="Anular venta" styleClass="btn-danger"
                                         onAction="#handleAnularVenta"/>
                             </HBox>
                             <TableView fx:id="tablaHistorialVentas" VBox.vgrow="ALWAYS">
                                 <columns>
-                                    <TableColumn fx:id="colVentaId" text="ID" prefWidth="60"/>
-                                    <TableColumn fx:id="colVentaFactura" text="Factura" prefWidth="120"/>
-                                    <TableColumn fx:id="colVentaFecha" text="Fecha" prefWidth="160"/>
+                                    <TableColumn fx:id="colVentaId" text="ID" prefWidth="50"/>
+                                    <TableColumn fx:id="colVentaFactura" text="Factura" prefWidth="100"/>
+                                    <TableColumn fx:id="colVentaCliente" text="Cliente" prefWidth="180"/>
+                                    <TableColumn fx:id="colVentaFecha" text="Fecha" prefWidth="140"/>
                                     <TableColumn fx:id="colVentaTotal" text="Total" prefWidth="100"/>
                                 </columns>
                             </TableView>
                         </VBox>
                     </VBox>
 
-                    <!-- ===================== USUARIOS (solo Administrador) ===================== -->
+                    <!-- ===================== CLIENTES ===================== -->
+                    <VBox fx:id="clientesView" styleClass="content-area" spacing="18" visible="false" managed="false">
+                        <VBox styleClass="panel" spacing="14">
+                            <Label text="Registro de clientes" styleClass="panel-title"/>
+                            <GridPane hgap="12" vgap="10">
+                                <columnConstraints>
+                                    <ColumnConstraints percentWidth="17"/>
+                                    <ColumnConstraints percentWidth="17"/>
+                                    <ColumnConstraints percentWidth="16"/>
+                                    <ColumnConstraints percentWidth="17"/>
+                                    <ColumnConstraints percentWidth="16"/>
+                                    <ColumnConstraints percentWidth="17"/>
+                                </columnConstraints>
+                                <VBox spacing="5" GridPane.columnIndex="0">
+                                    <Label text="Nombres" styleClass="field-label"/>
+                                    <TextField fx:id="nombreCliField" styleClass="input-field"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="1">
+                                    <Label text="Apellidos" styleClass="field-label"/>
+                                    <TextField fx:id="apellidoCliField" styleClass="input-field"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="2">
+                                    <Label text="Cédula" styleClass="field-label"/>
+                                    <TextField fx:id="cedulaCliField" styleClass="input-field"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="3">
+                                    <Label text="Correo" styleClass="field-label"/>
+                                    <TextField fx:id="correoCliField" styleClass="input-field"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="4">
+                                    <Label text="Teléfono" styleClass="field-label"/>
+                                    <TextField fx:id="telefonoCliField" styleClass="input-field"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="5">
+                                    <Label text="Sector" styleClass="field-label"/>
+                                    <TextField fx:id="sectorCliField" styleClass="input-field"/>
+                                </VBox>
+                                <rowConstraints>
+                                    <RowConstraints/>
+                                </rowConstraints>
+                            </GridPane>
+                            <HBox spacing="10">
+                                <Button fx:id="btnGuardarCli" text="Guardar" styleClass="btn-primary" onAction="#handleGuardarCliente"/>
+                                <Button fx:id="btnActualizarCli" text="Actualizar" styleClass="btn-secondary" onAction="#handleActualizarCliente"/>
+                                <Button fx:id="btnEliminarCli" text="Eliminar" styleClass="btn-danger" onAction="#handleEliminarCliente"/>
+                                <Button fx:id="btnLimpiarCli" text="Limpiar" styleClass="btn-ghost" onAction="#handleLimpiarCliente"/>
+                            </HBox>
+                        </VBox>
+                        <VBox styleClass="panel" spacing="10" VBox.vgrow="ALWAYS">
+                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                <Label text="Clientes registrados" styleClass="panel-title"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <TextField fx:id="searchClientes" promptText="Buscar cliente..." prefWidth="250"/>
+                            </HBox>
+                            <TableView fx:id="tablaClientes" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="colCliCedula" text="Cédula" prefWidth="110"/>
+                                    <TableColumn fx:id="colCliNombres" text="Nombres" prefWidth="150"/>
+                                    <TableColumn fx:id="colCliApellidos" text="Apellidos" prefWidth="150"/>
+                                    <TableColumn fx:id="colCliCorreo" text="Correo" prefWidth="180"/>
+                                    <TableColumn fx:id="colCliTelefono" text="Teléfono" prefWidth="110"/>
+                                    <TableColumn fx:id="colCliSector" text="Sector" prefWidth="120"/>
+                                </columns>
+                            </TableView>
+                        </VBox>
+                    </VBox>
+
+                    <!-- ===================== PROVEEDORES ===================== -->
+                    <VBox fx:id="proveedoresView" styleClass="content-area" spacing="18" visible="false" managed="false">
+                        <VBox styleClass="panel" spacing="14">
+                            <Label text="Registro de proveedores" styleClass="panel-title"/>
+                            <GridPane hgap="12" vgap="10">
+                                <columnConstraints>
+                                    <ColumnConstraints percentWidth="34"/>
+                                    <ColumnConstraints percentWidth="33"/>
+                                    <ColumnConstraints percentWidth="33"/>
+                                </columnConstraints>
+                                <VBox spacing="5" GridPane.columnIndex="0">
+                                    <Label text="Nombre / Empresa" styleClass="field-label"/>
+                                    <TextField fx:id="nombreProvField" styleClass="input-field"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="1">
+                                    <Label text="Correo" styleClass="field-label"/>
+                                    <TextField fx:id="correoProvField" styleClass="input-field"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="2">
+                                    <Label text="Teléfono" styleClass="field-label"/>
+                                    <TextField fx:id="telefonoProvField" styleClass="input-field"/>
+                                </VBox>
+                            </GridPane>
+                            <HBox spacing="10">
+                                <Button fx:id="btnGuardarProv" text="Guardar" styleClass="btn-primary" onAction="#handleGuardarProveedor"/>
+                                <Button fx:id="btnActualizarProv" text="Actualizar" styleClass="btn-secondary" onAction="#handleActualizarProveedor"/>
+                                <Button fx:id="btnEliminarProv" text="Eliminar" styleClass="btn-danger" onAction="#handleEliminarProveedor"/>
+                                <Button fx:id="btnLimpiarProv" text="Limpiar" styleClass="btn-ghost" onAction="#handleLimpiarProveedor"/>
+                            </HBox>
+                        </VBox>
+                        <VBox styleClass="panel" spacing="10" VBox.vgrow="ALWAYS">
+                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                <Label text="Proveedores registrados" styleClass="panel-title"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <TextField fx:id="searchProveedores" promptText="Buscar proveedor..." prefWidth="250"/>
+                            </HBox>
+                            <TableView fx:id="tablaProveedores" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="colProvId" text="ID" prefWidth="50"/>
+                                    <TableColumn fx:id="colProvNombre" text="Nombre / Empresa" prefWidth="250"/>
+                                    <TableColumn fx:id="colProvCorreo" text="Correo" prefWidth="200"/>
+                                    <TableColumn fx:id="colProvTelefono" text="Teléfono" prefWidth="130"/>
+                                </columns>
+                            </TableView>
+                        </VBox>
+                    </VBox>
+
+                    <!-- ===================== COMPRAS ===================== -->
+                    <VBox fx:id="comprasView" styleClass="content-area" spacing="18" visible="false" managed="false">
+                        <VBox styleClass="panel" spacing="14">
+                            <Label text="Registro de compra e ingreso de mercadería" styleClass="panel-title"/>
+                            <GridPane hgap="12" vgap="10">
+                                <columnConstraints>
+                                    <ColumnConstraints percentWidth="25"/>
+                                    <ColumnConstraints percentWidth="25"/>
+                                    <ColumnConstraints percentWidth="15"/>
+                                    <ColumnConstraints percentWidth="15"/>
+                                    <ColumnConstraints percentWidth="20"/>
+                                </columnConstraints>
+                                <VBox spacing="5" GridPane.columnIndex="0">
+                                    <Label text="Proveedor" styleClass="field-label"/>
+                                    <ComboBox fx:id="entradaProveedorCombo" maxWidth="Infinity" styleClass="input-field"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="1">
+                                    <Label text="Medicamento" styleClass="field-label"/>
+                                    <ComboBox fx:id="entradaMedicamentoCombo" maxWidth="Infinity" styleClass="input-field"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="2">
+                                    <Label text="Cantidad" styleClass="field-label"/>
+                                    <TextField fx:id="entradaCantidadField" styleClass="input-field" promptText="0"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="3">
+                                    <Label text="Precio compra" styleClass="field-label"/>
+                                    <TextField fx:id="entradaPrecioCompraField" styleClass="input-field" promptText="0.00"/>
+                                </VBox>
+                                <VBox spacing="5" GridPane.columnIndex="4" alignment="BOTTOM_LEFT">
+                                    <Button fx:id="btnRegistrarCompra" text="Registrar compra" styleClass="btn-primary"
+                                            maxWidth="Infinity" onAction="#handleRegistrarCompra"/>
+                                </VBox>
+                            </GridPane>
+                        </VBox>
+                        <VBox styleClass="panel" spacing="10" VBox.vgrow="ALWAYS">
+                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                <Label text="Historial de compras" styleClass="panel-title"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <TextField fx:id="searchCompras" promptText="Buscar compra..." prefWidth="250"/>
+                            </HBox>
+                            <TableView fx:id="tablaCompras" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="colCompraId" text="ID" prefWidth="50"/>
+                                    <TableColumn fx:id="colCompraProveedor" text="Proveedor" prefWidth="200"/>
+                                    <TableColumn fx:id="colCompraMedicamento" text="Medicamento" prefWidth="200"/>
+                                    <TableColumn fx:id="colCompraCantidad" text="Cantidad" prefWidth="90"/>
+                                    <TableColumn fx:id="colCompraPrecio" text="P. Compra" prefWidth="100"/>
+                                    <TableColumn fx:id="colCompraFecha" text="Fecha" prefWidth="150"/>
+                                </columns>
+                            </TableView>
+                        </VBox>
+                    </VBox>
+
+                    <!-- ===================== USUARIOS ===================== -->
                     <VBox fx:id="usuariosView" styleClass="content-area" spacing="18" visible="false" managed="false">
                         <VBox styleClass="panel" spacing="14">
                             <Label text="Registro de usuarios" styleClass="panel-title"/>
@@ -342,9 +494,12 @@
                                 <Button fx:id="btnLimpiarUsu" text="Limpiar" styleClass="btn-ghost" onAction="#handleLimpiarUsuario"/>
                             </HBox>
                         </VBox>
-
                         <VBox styleClass="panel" spacing="10" VBox.vgrow="ALWAYS">
-                            <Label text="Usuarios del sistema" styleClass="panel-title"/>
+                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                <Label text="Usuarios del sistema" styleClass="panel-title"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <TextField fx:id="searchUsuarios" promptText="Buscar usuario..." prefWidth="250"/>
+                            </HBox>
                             <TableView fx:id="tablaUsuarios" VBox.vgrow="ALWAYS">
                                 <columns>
                                     <TableColumn fx:id="colIdUsu" text="ID" prefWidth="50"/>
@@ -359,17 +514,182 @@
 
                     <!-- ===================== REPORTES ===================== -->
                     <VBox fx:id="reportesView" styleClass="content-area" spacing="18" visible="false" managed="false">
-                        <VBox styleClass="panel" spacing="14">
-                            <Label text="Estadísticas generales" styleClass="panel-title"/>
-                            <Label fx:id="lblTotalMedicamentosRep" text="0 medicamentos registrados" styleClass="a-text-title"/>
-                            <Label fx:id="lblStockBajoRep" text="0 artículos con stock bajo" styleClass="a-text-title"/>
-                            <Label fx:id="lblUsuariosActivosRep" text="0 usuarios activos" styleClass="a-text-title"/>
-                            <Button fx:id="btnExportarReporte" text="⬇ Exportar reporte (.csv)" styleClass="btn-primary"
-                                    onAction="#handleExportarReporte"/>
-                        </VBox>
+                        <!-- Sub-navegacion de reportes -->
+                        <HBox spacing="10">
+                            <Button fx:id="btnRepVentas" text="Ventas por periodo" styleClass="btn-primary" onAction="#showRepVentas"/>
+                            <Button fx:id="btnRepTopMeds" text="Top Medicamentos" styleClass="btn-ghost" onAction="#showRepTopMeds"/>
+                            <Button fx:id="btnRepInventario" text="Inventario" styleClass="btn-ghost" onAction="#showRepInventario"/>
+                            <Button fx:id="btnRepCompras" text="Compras por periodo" styleClass="btn-ghost" onAction="#showRepCompras"/>
+                            <Button fx:id="btnRepClientes" text="Clientes" styleClass="btn-ghost" onAction="#showRepClientes"/>
+                            <Button fx:id="btnRepCaja" text="Resumen de caja" styleClass="btn-ghost" onAction="#showRepCaja"/>
+                        </HBox>
+
+                        <StackPane fx:id="reportesStack">
+
+                            <!-- REP Ventas por periodo -->
+                            <VBox fx:id="repVentasPanel" spacing="10">
+                                <VBox styleClass="panel" spacing="14">
+                                    <Label text="Ventas por periodo" styleClass="panel-title"/>
+                                    <HBox spacing="10" alignment="CENTER_LEFT">
+                                        <Label text="Desde:" styleClass="field-label"/>
+                                        <DatePicker fx:id="repVentasDesde" maxWidth="180"/>
+                                        <Label text="Hasta:" styleClass="field-label"/>
+                                        <DatePicker fx:id="repVentasHasta" maxWidth="180"/>
+                                        <Button text="Buscar" styleClass="btn-primary" onAction="#handleRepVentasBuscar"/>
+                                        <Button text="Exportar PDF" styleClass="btn-secondary" onAction="#handleRepVentasPDF"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="repVentasResumen" text="" styleClass="panel-title"/>
+                                    </HBox>
+                                </VBox>
+                                <TableView fx:id="tablaRepVentas" VBox.vgrow="ALWAYS" prefHeight="400">
+                                    <columns>
+                                        <TableColumn fx:id="colRepVenId" text="ID" prefWidth="50"/>
+                                        <TableColumn fx:id="colRepVenFactura" text="Factura" prefWidth="100"/>
+                                        <TableColumn fx:id="colRepVenCliente" text="Cliente" prefWidth="200"/>
+                                        <TableColumn fx:id="colRepVenFecha" text="Fecha" prefWidth="150"/>
+                                        <TableColumn fx:id="colRepVenTotal" text="Total" prefWidth="100"/>
+                                    </columns>
+                                </TableView>
+                            </VBox>
+
+                            <!-- REP Top Medicamentos -->
+                            <VBox fx:id="repTopMedsPanel" spacing="10" visible="false" managed="false">
+                                <VBox styleClass="panel" spacing="14">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Medicamentos mas vendidos" styleClass="panel-title"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Button text="Exportar PDF" styleClass="btn-secondary" onAction="#handleRepTopMedsPDF"/>
+                                    </HBox>
+                                </VBox>
+                                <TableView fx:id="tablaRepTopMeds" VBox.vgrow="ALWAYS" prefHeight="400">
+                                    <columns>
+                                        <TableColumn fx:id="colRepTopId" text="#" prefWidth="50"/>
+                                        <TableColumn fx:id="colRepTopNombre" text="Medicamento" prefWidth="220"/>
+                                        <TableColumn fx:id="colRepTopCategoria" text="Categoria" prefWidth="140"/>
+                                        <TableColumn fx:id="colRepTopVendido" text="Unidades vendidas" prefWidth="140"/>
+                                        <TableColumn fx:id="colRepTopIngresos" text="Ingresos" prefWidth="120"/>
+                                    </columns>
+                                </TableView>
+                            </VBox>
+
+                            <!-- REP Inventario -->
+                            <VBox fx:id="repInventarioPanel" spacing="10" visible="false" managed="false">
+                                <VBox styleClass="panel" spacing="14">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Estado del inventario" styleClass="panel-title"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Button text="Exportar PDF" styleClass="btn-secondary" onAction="#handleRepInventarioPDF"/>
+                                    </HBox>
+                                </VBox>
+                                <TableView fx:id="tablaRepInventario" VBox.vgrow="ALWAYS" prefHeight="400">
+                                    <columns>
+                                        <TableColumn fx:id="colRepInvId" text="ID" prefWidth="50"/>
+                                        <TableColumn fx:id="colRepInvNombre" text="Medicamento" prefWidth="200"/>
+                                        <TableColumn fx:id="colRepInvCategoria" text="Categoria" prefWidth="130"/>
+                                        <TableColumn fx:id="colRepInvStock" text="Stock" prefWidth="80"/>
+                                        <TableColumn fx:id="colRepInvPrecio" text="Precio" prefWidth="90"/>
+                                        <TableColumn fx:id="colRepInvLote" text="Lote" prefWidth="100"/>
+                                        <TableColumn fx:id="colRepInvVence" text="Vencimiento" prefWidth="110"/>
+                                        <TableColumn fx:id="colRepInvEstado" text="Estado" prefWidth="100"/>
+                                    </columns>
+                                </TableView>
+                            </VBox>
+
+                            <!-- REP Compras por periodo -->
+                            <VBox fx:id="repComprasPanel" spacing="10" visible="false" managed="false">
+                                <VBox styleClass="panel" spacing="14">
+                                    <Label text="Compras por periodo" styleClass="panel-title"/>
+                                    <HBox spacing="10" alignment="CENTER_LEFT">
+                                        <Label text="Desde:" styleClass="field-label"/>
+                                        <DatePicker fx:id="repComprasDesde" maxWidth="180"/>
+                                        <Label text="Hasta:" styleClass="field-label"/>
+                                        <DatePicker fx:id="repComprasHasta" maxWidth="180"/>
+                                        <Button text="Buscar" styleClass="btn-primary" onAction="#handleRepComprasBuscar"/>
+                                        <Button text="Exportar PDF" styleClass="btn-secondary" onAction="#handleRepComprasPDF"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="repComprasResumen" text="" styleClass="panel-title"/>
+                                    </HBox>
+                                </VBox>
+                                <TableView fx:id="tablaRepCompras" VBox.vgrow="ALWAYS" prefHeight="400">
+                                    <columns>
+                                        <TableColumn fx:id="colRepCompId" text="ID" prefWidth="50"/>
+                                        <TableColumn fx:id="colRepCompProveedor" text="Proveedor" prefWidth="200"/>
+                                        <TableColumn fx:id="colRepCompMedicamento" text="Medicamento" prefWidth="200"/>
+                                        <TableColumn fx:id="colRepCompCantidad" text="Cantidad" prefWidth="90"/>
+                                        <TableColumn fx:id="colRepCompPrecio" text="P. Compra" prefWidth="100"/>
+                                        <TableColumn fx:id="colRepCompFecha" text="Fecha" prefWidth="150"/>
+                                    </columns>
+                                </TableView>
+                            </VBox>
+
+                            <!-- REP Clientes -->
+                            <VBox fx:id="repClientesPanel" spacing="10" visible="false" managed="false">
+                                <VBox styleClass="panel" spacing="14">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Reporte de clientes" styleClass="panel-title"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Button text="Exportar PDF" styleClass="btn-secondary" onAction="#handleRepClientesPDF"/>
+                                    </HBox>
+                                </VBox>
+                                <TableView fx:id="tablaRepClientes" VBox.vgrow="ALWAYS" prefHeight="400">
+                                    <columns>
+                                        <TableColumn fx:id="colRepCliId" text="ID" prefWidth="50"/>
+                                        <TableColumn fx:id="colRepCliNombre" text="Nombre" prefWidth="220"/>
+                                        <TableColumn fx:id="colRepCliCedula" text="Cedula" prefWidth="130"/>
+                                        <TableColumn fx:id="colRepCliCompras" text="Num. Compras" prefWidth="110"/>
+                                        <TableColumn fx:id="colRepCliGastado" text="Total Gastado" prefWidth="120"/>
+                                    </columns>
+                                </TableView>
+                            </VBox>
+
+                            <!-- REP Resumen de caja -->
+                            <VBox fx:id="repCajaPanel" spacing="10" visible="false" managed="false">
+                                <VBox styleClass="panel" spacing="14">
+                                    <Label text="Resumen de caja" styleClass="panel-title"/>
+                                    <HBox spacing="10" alignment="CENTER_LEFT">
+                                        <Label text="Desde:" styleClass="field-label"/>
+                                        <DatePicker fx:id="repCajaDesde" maxWidth="180"/>
+                                        <Label text="Hasta:" styleClass="field-label"/>
+                                        <DatePicker fx:id="repCajaHasta" maxWidth="180"/>
+                                        <Button text="Buscar" styleClass="btn-primary" onAction="#handleRepCajaBuscar"/>
+                                        <Button text="Exportar PDF" styleClass="btn-secondary" onAction="#handleRepCajaPDF"/>
+                                    </HBox>
+                                    <GridPane hgap="20" vgap="14">
+                                        <columnConstraints>
+                                            <ColumnConstraints percentWidth="33"/>
+                                            <ColumnConstraints percentWidth="33"/>
+                                            <ColumnConstraints percentWidth="34"/>
+                                        </columnConstraints>
+                                        <VBox styleClass="stat-card" spacing="6" GridPane.columnIndex="0">
+                                            <Label text="TOTAL VENTAS" styleClass="stat-label"/>
+                                            <Label fx:id="repCajaTotalVentas" text="0.00" styleClass="stat-value"/>
+                                            <Label fx:id="repCajaNumVentas" text="0 ventas" styleClass="stat-sub"/>
+                                        </VBox>
+                                        <VBox styleClass="stat-card" spacing="6" GridPane.columnIndex="1">
+                                            <Label text="TOTAL COMPRAS" styleClass="stat-label"/>
+                                            <Label fx:id="repCajaTotalCompras" text="0.00" styleClass="stat-value"/>
+                                            <Label fx:id="repCajaNumCompras" text="0 compras" styleClass="stat-sub"/>
+                                        </VBox>
+                                        <VBox styleClass="stat-card" spacing="6" GridPane.columnIndex="2">
+                                            <Label text="GANANCIA ESTIMADA" styleClass="stat-label"/>
+                                            <Label fx:id="repCajaGanancia" text="0.00" styleClass="stat-value"/>
+                                            <Label fx:id="repCajaGananciaSub" text="Ventas - Compras" styleClass="stat-sub"/>
+                                        </VBox>
+                                    </GridPane>
+                                </VBox>
+                                <VBox styleClass="panel" spacing="10" VBox.vgrow="ALWAYS">
+                                    <Label text="Ventas por dia" styleClass="panel-title"/>
+                                    <BarChart fx:id="repCajaChart" VBox.vgrow="ALWAYS" animated="false">
+                                        <xAxis><CategoryAxis fx:id="repCajaXAxis"/></xAxis>
+                                        <yAxis><NumberAxis fx:id="repCajaYAxis"/></yAxis>
+                                    </BarChart>
+                                </VBox>
+                            </VBox>
+
+                        </StackPane>
                     </VBox>
 
-                    <!-- ===================== CONFIGURACIÓN (solo Administrador) ===================== -->
+                    <!-- ===================== CONFIGURACIÓN ===================== -->
                     <VBox fx:id="configuracionView" styleClass="content-area" spacing="18" visible="false" managed="false">
                         <VBox styleClass="panel" spacing="14" maxWidth="480">
                             <Label text="Parámetros del sistema" styleClass="panel-title"/>

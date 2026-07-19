@@ -15,7 +15,7 @@ import java.util.List;
 
 public class VentaDAO {
 
-    public Venta registrarVenta(int usuarioId, List<DetalleVenta> items) throws SQLException {
+    public Venta registrarVenta(int usuarioId, int clienteId, List<DetalleVenta> items) throws SQLException {
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("La venta debe tener al menos un producto.");
         }
@@ -24,61 +24,61 @@ public class VentaDAO {
         boolean autoCommitOriginal = c.getAutoCommit();
         c.setAutoCommit(false);
         try {
-            int nuevoId;
-            try (PreparedStatement psSeq = c.prepareStatement("SELECT nextval('ventas_id_seq')");
-                 ResultSet rs = psSeq.executeQuery()) {
-                rs.next();
-                nuevoId = rs.getInt(1);
-            }
-
-            String numeroFactura = "FAC-" + String.format("%04d", nuevoId);
             double total = 0;
             for (DetalleVenta d : items) total += d.getSubtotal();
 
+            String numeroFactura = generarNumeroFactura(c);
+
             try (PreparedStatement ps = c.prepareStatement(
-                    "INSERT INTO ventas (id, usuario_id, numero_factura, total) VALUES (?, ?, ?, ?)")) {
-                ps.setInt(1, nuevoId);
-                ps.setInt(2, usuarioId);
+                    "INSERT INTO ventas (usuario_id, cliente_id, numero_factura, total) VALUES (?, ?, ?, ?)",
+                    java.sql.Statement.RETURN_GENERATED_KEYS)) {
+                ps.setInt(1, usuarioId);
+                ps.setInt(2, clienteId);
                 ps.setString(3, numeroFactura);
                 ps.setDouble(4, total);
                 ps.executeUpdate();
-            }
 
-            try (PreparedStatement psDet = c.prepareStatement(
-                    "INSERT INTO detalle_ventas (venta_id, medicamento_id, cantidad, precio_unitario, subtotal) " +
-                            "VALUES (?, ?, ?, ?, ?)");
-                 PreparedStatement psStock = c.prepareStatement(
-                         "UPDATE medicamentos SET stock = stock - ? WHERE id = ? AND stock >= ?");
-                 PreparedStatement psMov = c.prepareStatement(
-                         "INSERT INTO movimientos_inventario (medicamento_id, tipo, cantidad, usuario_id) " +
-                                 "VALUES (?, 'SALIDA', ?, ?)")) {
-
-                for (DetalleVenta d : items) {
-                    psStock.setInt(1, d.getCantidad());
-                    psStock.setInt(2, d.getMedicamentoId());
-                    psStock.setInt(3, d.getCantidad());
-                    int filas = psStock.executeUpdate();
-                    if (filas == 0) {
-                        throw new SQLException("Stock insuficiente para \"" + d.getNombreMedicamento() + "\".");
-                    }
-
-                    psDet.setInt(1, nuevoId);
-                    psDet.setInt(2, d.getMedicamentoId());
-                    psDet.setInt(3, d.getCantidad());
-                    psDet.setDouble(4, d.getPrecioUnitario());
-                    psDet.setDouble(5, d.getSubtotal());
-                    psDet.executeUpdate();
-
-                    psMov.setInt(1, d.getMedicamentoId());
-                    psMov.setInt(2, d.getCantidad());
-                    psMov.setInt(3, usuarioId);
-                    psMov.executeUpdate();
+                int nuevoId;
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    rs.next();
+                    nuevoId = rs.getInt(1);
                 }
+
+                try (PreparedStatement psDet = c.prepareStatement(
+                        "INSERT INTO detalle_ventas (venta_id, medicamento_id, cantidad, precio_unitario, subtotal) " +
+                                "VALUES (?, ?, ?, ?, ?)");
+                     PreparedStatement psStock = c.prepareStatement(
+                             "UPDATE medicamentos SET stock = stock - ? WHERE id = ? AND stock >= ?");
+                     PreparedStatement psMov = c.prepareStatement(
+                             "INSERT INTO movimientos_inventario (medicamento_id, tipo, cantidad, usuario_id) " +
+                                     "VALUES (?, 'SALIDA', ?, ?)")) {
+
+                    for (DetalleVenta d : items) {
+                        psStock.setInt(1, d.getCantidad());
+                        psStock.setInt(2, d.getMedicamentoId());
+                        psStock.setInt(3, d.getCantidad());
+                        int filas = psStock.executeUpdate();
+                        if (filas == 0) {
+                            throw new SQLException("Stock insuficiente para \"" + d.getNombreMedicamento() + "\".");
+                        }
+
+                        psDet.setInt(1, nuevoId);
+                        psDet.setInt(2, d.getMedicamentoId());
+                        psDet.setInt(3, d.getCantidad());
+                        psDet.setDouble(4, d.getPrecioUnitario());
+                        psDet.setDouble(5, d.getSubtotal());
+                        psDet.executeUpdate();
+
+                        psMov.setInt(1, d.getMedicamentoId());
+                        psMov.setInt(2, d.getCantidad());
+                        psMov.setInt(3, usuarioId);
+                        psMov.executeUpdate();
+                    }
+                }
+
+                c.commit();
+                return new Venta(nuevoId, usuarioId, clienteId, numeroFactura, LocalDateTime.now(), total);
             }
-
-            c.commit();
-            return new Venta(nuevoId, usuarioId, numeroFactura, LocalDateTime.now(), total);
-
         } catch (SQLException e) {
             c.rollback();
             throw e;
@@ -87,13 +87,23 @@ public class VentaDAO {
         }
     }
 
-    /** Historial de ventas de un cajero **/
+    private String generarNumeroFactura(Connection c) throws SQLException {
+        String sql = "SELECT COUNT(*) + 1 FROM ventas";
+        try (PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            rs.next();
+            return "FAC-" + String.format("%04d", rs.getInt(1));
+        }
+    }
+
     public List<Venta> listarPorUsuario(int usuarioId) throws SQLException {
-        String sql = "SELECT id, usuario_id, numero_factura, fecha, total FROM ventas " +
-                "WHERE usuario_id = ? ORDER BY fecha DESC";
+        String sql = "SELECT v.*, c.nombres || ' ' || c.apellidos AS cliente_nombre " +
+                "FROM ventas v LEFT JOIN clientes c ON v.cliente_id = c.id " +
+                "WHERE v.usuario_id = ? ORDER BY v.fecha DESC";
+        System.out.println("[VentaDAO] listarPorUsuario: " + sql);
         List<Venta> lista = new ArrayList<>();
-        try (Connection c = Conexion.getInstancia().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection conn = Conexion.getInstancia().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, usuarioId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -104,7 +114,23 @@ public class VentaDAO {
         return lista;
     }
 
-    /** Detalle de productos de una venta */
+    public List<Venta> listarTodas() throws SQLException {
+        String sql = "SELECT v.*, c.nombres || ' ' || c.apellidos AS cliente_nombre " +
+                "FROM ventas v LEFT JOIN clientes c ON v.cliente_id = c.id " +
+                "ORDER BY v.fecha DESC";
+        System.out.println("[VentaDAO] listarTodas: " + sql);
+        List<Venta> lista = new ArrayList<>();
+        try (Connection conn = Conexion.getInstancia().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(mapear(rs));
+                }
+            }
+        }
+        return lista;
+    }
+
     public List<DetalleVenta> obtenerDetalle(int ventaId) throws SQLException {
         String sql = "SELECT dv.medicamento_id, m.nombre, dv.cantidad, dv.precio_unitario, dv.subtotal " +
                 "FROM detalle_ventas dv JOIN medicamentos m ON m.id = dv.medicamento_id " +
@@ -173,10 +199,10 @@ public class VentaDAO {
         }
     }
 
-    /** Total vendido y número de transacciones. */
     public double[] resumenHoy(int usuarioId) throws SQLException {
         String sql = "SELECT COUNT(*), COALESCE(SUM(total), 0) FROM ventas " +
-                "WHERE usuario_id = ? AND fecha::date = CURRENT_DATE";
+                "WHERE usuario_id = ? AND CAST(fecha AS DATE) = CURRENT_DATE";
+        System.out.println("[VentaDAO] resumenHoy: " + sql);
         try (Connection c = Conexion.getInstancia().getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, usuarioId);
@@ -189,10 +215,24 @@ public class VentaDAO {
         return new double[]{0, 0};
     }
 
-    /** Últimas N ventas de un usuario. */
+    public double[] resumenHoyTodas() throws SQLException {
+        String sql = "SELECT COUNT(*), COALESCE(SUM(total), 0) FROM ventas " +
+                "WHERE CAST(fecha AS DATE) = CURRENT_DATE";
+        try (Connection c = Conexion.getInstancia().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return new double[]{rs.getInt(1), rs.getDouble(2)};
+            }
+        }
+        return new double[]{0, 0};
+    }
+
     public List<Venta> ultimasVentas(int usuarioId, int limite) throws SQLException {
-        String sql = "SELECT id, usuario_id, numero_factura, fecha, total FROM ventas " +
-                "WHERE usuario_id = ? ORDER BY fecha DESC LIMIT ?";
+        String sql = "SELECT v.*, c.nombres || ' ' || c.apellidos AS cliente_nombre " +
+                "FROM ventas v LEFT JOIN clientes c ON v.cliente_id = c.id " +
+                "WHERE v.usuario_id = ? ORDER BY v.fecha DESC LIMIT ?";
+        System.out.println("[VentaDAO] ultimasVentas: " + sql + " params=[" + usuarioId + ", " + limite + "]");
         List<Venta> lista = new ArrayList<>();
         try (Connection c = Conexion.getInstancia().getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -207,14 +247,37 @@ public class VentaDAO {
         return lista;
     }
 
+    public List<Venta> ultimasVentasTodas(int limite) throws SQLException {
+        String sql = "SELECT v.*, c.nombres || ' ' || c.apellidos AS cliente_nombre " +
+                "FROM ventas v LEFT JOIN clientes c ON v.cliente_id = c.id " +
+                "ORDER BY v.fecha DESC LIMIT ?";
+        List<Venta> lista = new ArrayList<>();
+        try (Connection c = Conexion.getInstancia().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, limite);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(mapear(rs));
+                }
+            }
+        }
+        return lista;
+    }
+
     private Venta mapear(ResultSet rs) throws SQLException {
         Timestamp fecha = rs.getTimestamp("fecha");
-        return new Venta(
+        Venta v = new Venta(
                 rs.getInt("id"),
                 rs.getInt("usuario_id"),
+                rs.getInt("cliente_id"),
                 rs.getString("numero_factura"),
                 fecha != null ? fecha.toLocalDateTime() : null,
                 rs.getDouble("total")
         );
+        try {
+            v.setClienteNombre(rs.getString("cliente_nombre"));
+        } catch (SQLException ignored) {
+        }
+        return v;
     }
 }
