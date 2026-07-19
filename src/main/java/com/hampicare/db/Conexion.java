@@ -1,5 +1,9 @@
 package com.hampicare.db;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -11,13 +15,14 @@ public final class Conexion {
     private static Conexion instancia;
     private Connection conn;
 
-    // Configuración para desarrollo local con H2 persistente
-    private static final String URL = "jdbc:h2:./hampicare_db;MODE=PostgreSQL";
-    private static final String USUARIO = "sa";
-    private static final String CLAVE = "";
+    private static final String URL = System.getProperty("SUPABASE_URL",
+            "jdbc:postgresql://aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require");
+    private static final String USUARIO = System.getProperty("SUPABASE_USER", "postgres.jswqhccogcenejfbnwuy");
+    private static final String CLAVE = System.getProperty("SUPABASE_PASSWORD", "");
 
     private Conexion() {
         try {
+            Class.forName("org.postgresql.Driver");
             System.out.println("[DB] Conectando a: " + URL);
             conn = DriverManager.getConnection(URL, USUARIO, CLAVE);
             System.out.println("[DB] Conexion establecida OK");
@@ -26,20 +31,45 @@ public final class Conexion {
             System.err.println("[DB] FALLO Conexion: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("No se pudo conectar a la base de datos: " + e.getMessage(), e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Driver PostgreSQL no encontrado", e);
         }
     }
-    
+
     private void initDatabase() {
         try (Statement stmt = conn.createStatement()) {
             System.out.println("[DB] Verificando si existen tablas...");
             ResultSet rs = stmt.executeQuery(
-                    "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'USUARIOS' " +
-                    "OR table_name = 'usuarios'");
+                    "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'usuarios'");
             int count = rs.next() ? rs.getInt(1) : -1;
             System.out.println("[DB] Tablas encontradas: " + count);
             if (count == 0) {
                 System.out.println("[DB] Ejecutando script de inicializacion...");
-                stmt.execute("RUNSCRIPT FROM 'classpath:/com/hampicare/db/ScriptH2.sql'");
+                InputStream is = getClass().getResourceAsStream("/Script.sql");
+                if (is == null) {
+                    System.err.println("[DB] Script.sql no encontrado en classpath.");
+                    return;
+                }
+                String script;
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        sb.append(line).append("\n");
+                    }
+                    script = sb.toString();
+                }
+
+                // PostgreSQL: statements separated by semicolons, not lines
+                // Strip comments (-- and /* */) then split on ;
+                String cleanScript = script.replaceAll("(?m)^--.*$", "");
+                cleanScript = cleanScript.replaceAll("/\\*[\\s\\S]*?\\*/", "");
+                for (String sql : cleanScript.split(";")) {
+                    String trimmed = sql.trim();
+                    if (!trimmed.isEmpty()) {
+                        stmt.execute(trimmed);
+                    }
+                }
                 System.out.println("[DB] Script ejecutado OK");
             } else {
                 System.out.println("[DB] Base de datos ya inicializada.");

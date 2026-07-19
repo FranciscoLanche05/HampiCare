@@ -215,6 +215,19 @@ public class VentaDAO {
         return new double[]{0, 0};
     }
 
+    public double[] resumenHoyTodas() throws SQLException {
+        String sql = "SELECT COUNT(*), COALESCE(SUM(total), 0) FROM ventas " +
+                "WHERE CAST(fecha AS DATE) = CURRENT_DATE";
+        try (Connection c = Conexion.getInstancia().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return new double[]{rs.getInt(1), rs.getDouble(2)};
+            }
+        }
+        return new double[]{0, 0};
+    }
+
     public List<Venta> ultimasVentas(int usuarioId, int limite) throws SQLException {
         String sql = "SELECT v.*, c.nombres || ' ' || c.apellidos AS cliente_nombre " +
                 "FROM ventas v LEFT JOIN clientes c ON v.cliente_id = c.id " +
@@ -225,6 +238,23 @@ public class VentaDAO {
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, usuarioId);
             ps.setInt(2, limite);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(mapear(rs));
+                }
+            }
+        }
+        return lista;
+    }
+
+    public List<Venta> ultimasVentasTodas(int limite) throws SQLException {
+        String sql = "SELECT v.*, c.nombres || ' ' || c.apellidos AS cliente_nombre " +
+                "FROM ventas v LEFT JOIN clientes c ON v.cliente_id = c.id " +
+                "ORDER BY v.fecha DESC LIMIT ?";
+        List<Venta> lista = new ArrayList<>();
+        try (Connection c = Conexion.getInstancia().getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, limite);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     lista.add(mapear(rs));

@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.ScrollPane?>
@@ -11,6 +12,9 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
@@ -37,7 +41,7 @@
                 <VBox.margin><Insets bottom="22"/></VBox.margin>
             </HBox>
 
-            <Button fx:id="navHome" text="Panel principal" styleClass="nav-item active"
+            <Button fx:id="navHome" text="Panel principal" styleClass="nav-item"
                     maxWidth="Infinity" onAction="#showHome"/>
             <Button fx:id="navInventario" text="Inventario" styleClass="nav-item"
                     maxWidth="Infinity" onAction="#showInventario"/>
@@ -510,14 +514,179 @@
 
                     <!-- ===================== REPORTES ===================== -->
                     <VBox fx:id="reportesView" styleClass="content-area" spacing="18" visible="false" managed="false">
-                        <VBox styleClass="panel" spacing="14">
-                            <Label text="Estadísticas generales" styleClass="panel-title"/>
-                            <Label fx:id="lblTotalMedicamentosRep" text="0 medicamentos registrados" styleClass="a-text-title"/>
-                            <Label fx:id="lblStockBajoRep" text="0 artículos con stock bajo" styleClass="a-text-title"/>
-                            <Label fx:id="lblUsuariosActivosRep" text="0 usuarios activos" styleClass="a-text-title"/>
-                            <Button fx:id="btnExportarReporte" text="Exportar reporte (.csv)" styleClass="btn-primary"
-                                    onAction="#handleExportarReporte"/>
-                        </VBox>
+                        <!-- Sub-navegacion de reportes -->
+                        <HBox spacing="10">
+                            <Button fx:id="btnRepVentas" text="Ventas por periodo" styleClass="btn-primary" onAction="#showRepVentas"/>
+                            <Button fx:id="btnRepTopMeds" text="Top Medicamentos" styleClass="btn-ghost" onAction="#showRepTopMeds"/>
+                            <Button fx:id="btnRepInventario" text="Inventario" styleClass="btn-ghost" onAction="#showRepInventario"/>
+                            <Button fx:id="btnRepCompras" text="Compras por periodo" styleClass="btn-ghost" onAction="#showRepCompras"/>
+                            <Button fx:id="btnRepClientes" text="Clientes" styleClass="btn-ghost" onAction="#showRepClientes"/>
+                            <Button fx:id="btnRepCaja" text="Resumen de caja" styleClass="btn-ghost" onAction="#showRepCaja"/>
+                        </HBox>
+
+                        <StackPane fx:id="reportesStack">
+
+                            <!-- REP Ventas por periodo -->
+                            <VBox fx:id="repVentasPanel" spacing="10">
+                                <VBox styleClass="panel" spacing="14">
+                                    <Label text="Ventas por periodo" styleClass="panel-title"/>
+                                    <HBox spacing="10" alignment="CENTER_LEFT">
+                                        <Label text="Desde:" styleClass="field-label"/>
+                                        <DatePicker fx:id="repVentasDesde" maxWidth="180"/>
+                                        <Label text="Hasta:" styleClass="field-label"/>
+                                        <DatePicker fx:id="repVentasHasta" maxWidth="180"/>
+                                        <Button text="Buscar" styleClass="btn-primary" onAction="#handleRepVentasBuscar"/>
+                                        <Button text="Exportar PDF" styleClass="btn-secondary" onAction="#handleRepVentasPDF"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="repVentasResumen" text="" styleClass="panel-title"/>
+                                    </HBox>
+                                </VBox>
+                                <TableView fx:id="tablaRepVentas" VBox.vgrow="ALWAYS" prefHeight="400">
+                                    <columns>
+                                        <TableColumn fx:id="colRepVenId" text="ID" prefWidth="50"/>
+                                        <TableColumn fx:id="colRepVenFactura" text="Factura" prefWidth="100"/>
+                                        <TableColumn fx:id="colRepVenCliente" text="Cliente" prefWidth="200"/>
+                                        <TableColumn fx:id="colRepVenFecha" text="Fecha" prefWidth="150"/>
+                                        <TableColumn fx:id="colRepVenTotal" text="Total" prefWidth="100"/>
+                                    </columns>
+                                </TableView>
+                            </VBox>
+
+                            <!-- REP Top Medicamentos -->
+                            <VBox fx:id="repTopMedsPanel" spacing="10" visible="false" managed="false">
+                                <VBox styleClass="panel" spacing="14">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Medicamentos mas vendidos" styleClass="panel-title"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Button text="Exportar PDF" styleClass="btn-secondary" onAction="#handleRepTopMedsPDF"/>
+                                    </HBox>
+                                </VBox>
+                                <TableView fx:id="tablaRepTopMeds" VBox.vgrow="ALWAYS" prefHeight="400">
+                                    <columns>
+                                        <TableColumn fx:id="colRepTopId" text="#" prefWidth="50"/>
+                                        <TableColumn fx:id="colRepTopNombre" text="Medicamento" prefWidth="220"/>
+                                        <TableColumn fx:id="colRepTopCategoria" text="Categoria" prefWidth="140"/>
+                                        <TableColumn fx:id="colRepTopVendido" text="Unidades vendidas" prefWidth="140"/>
+                                        <TableColumn fx:id="colRepTopIngresos" text="Ingresos" prefWidth="120"/>
+                                    </columns>
+                                </TableView>
+                            </VBox>
+
+                            <!-- REP Inventario -->
+                            <VBox fx:id="repInventarioPanel" spacing="10" visible="false" managed="false">
+                                <VBox styleClass="panel" spacing="14">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Estado del inventario" styleClass="panel-title"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Button text="Exportar PDF" styleClass="btn-secondary" onAction="#handleRepInventarioPDF"/>
+                                    </HBox>
+                                </VBox>
+                                <TableView fx:id="tablaRepInventario" VBox.vgrow="ALWAYS" prefHeight="400">
+                                    <columns>
+                                        <TableColumn fx:id="colRepInvId" text="ID" prefWidth="50"/>
+                                        <TableColumn fx:id="colRepInvNombre" text="Medicamento" prefWidth="200"/>
+                                        <TableColumn fx:id="colRepInvCategoria" text="Categoria" prefWidth="130"/>
+                                        <TableColumn fx:id="colRepInvStock" text="Stock" prefWidth="80"/>
+                                        <TableColumn fx:id="colRepInvPrecio" text="Precio" prefWidth="90"/>
+                                        <TableColumn fx:id="colRepInvLote" text="Lote" prefWidth="100"/>
+                                        <TableColumn fx:id="colRepInvVence" text="Vencimiento" prefWidth="110"/>
+                                        <TableColumn fx:id="colRepInvEstado" text="Estado" prefWidth="100"/>
+                                    </columns>
+                                </TableView>
+                            </VBox>
+
+                            <!-- REP Compras por periodo -->
+                            <VBox fx:id="repComprasPanel" spacing="10" visible="false" managed="false">
+                                <VBox styleClass="panel" spacing="14">
+                                    <Label text="Compras por periodo" styleClass="panel-title"/>
+                                    <HBox spacing="10" alignment="CENTER_LEFT">
+                                        <Label text="Desde:" styleClass="field-label"/>
+                                        <DatePicker fx:id="repComprasDesde" maxWidth="180"/>
+                                        <Label text="Hasta:" styleClass="field-label"/>
+                                        <DatePicker fx:id="repComprasHasta" maxWidth="180"/>
+                                        <Button text="Buscar" styleClass="btn-primary" onAction="#handleRepComprasBuscar"/>
+                                        <Button text="Exportar PDF" styleClass="btn-secondary" onAction="#handleRepComprasPDF"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="repComprasResumen" text="" styleClass="panel-title"/>
+                                    </HBox>
+                                </VBox>
+                                <TableView fx:id="tablaRepCompras" VBox.vgrow="ALWAYS" prefHeight="400">
+                                    <columns>
+                                        <TableColumn fx:id="colRepCompId" text="ID" prefWidth="50"/>
+                                        <TableColumn fx:id="colRepCompProveedor" text="Proveedor" prefWidth="200"/>
+                                        <TableColumn fx:id="colRepCompMedicamento" text="Medicamento" prefWidth="200"/>
+                                        <TableColumn fx:id="colRepCompCantidad" text="Cantidad" prefWidth="90"/>
+                                        <TableColumn fx:id="colRepCompPrecio" text="P. Compra" prefWidth="100"/>
+                                        <TableColumn fx:id="colRepCompFecha" text="Fecha" prefWidth="150"/>
+                                    </columns>
+                                </TableView>
+                            </VBox>
+
+                            <!-- REP Clientes -->
+                            <VBox fx:id="repClientesPanel" spacing="10" visible="false" managed="false">
+                                <VBox styleClass="panel" spacing="14">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Reporte de clientes" styleClass="panel-title"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Button text="Exportar PDF" styleClass="btn-secondary" onAction="#handleRepClientesPDF"/>
+                                    </HBox>
+                                </VBox>
+                                <TableView fx:id="tablaRepClientes" VBox.vgrow="ALWAYS" prefHeight="400">
+                                    <columns>
+                                        <TableColumn fx:id="colRepCliId" text="ID" prefWidth="50"/>
+                                        <TableColumn fx:id="colRepCliNombre" text="Nombre" prefWidth="220"/>
+                                        <TableColumn fx:id="colRepCliCedula" text="Cedula" prefWidth="130"/>
+                                        <TableColumn fx:id="colRepCliCompras" text="Num. Compras" prefWidth="110"/>
+                                        <TableColumn fx:id="colRepCliGastado" text="Total Gastado" prefWidth="120"/>
+                                    </columns>
+                                </TableView>
+                            </VBox>
+
+                            <!-- REP Resumen de caja -->
+                            <VBox fx:id="repCajaPanel" spacing="10" visible="false" managed="false">
+                                <VBox styleClass="panel" spacing="14">
+                                    <Label text="Resumen de caja" styleClass="panel-title"/>
+                                    <HBox spacing="10" alignment="CENTER_LEFT">
+                                        <Label text="Desde:" styleClass="field-label"/>
+                                        <DatePicker fx:id="repCajaDesde" maxWidth="180"/>
+                                        <Label text="Hasta:" styleClass="field-label"/>
+                                        <DatePicker fx:id="repCajaHasta" maxWidth="180"/>
+                                        <Button text="Buscar" styleClass="btn-primary" onAction="#handleRepCajaBuscar"/>
+                                        <Button text="Exportar PDF" styleClass="btn-secondary" onAction="#handleRepCajaPDF"/>
+                                    </HBox>
+                                    <GridPane hgap="20" vgap="14">
+                                        <columnConstraints>
+                                            <ColumnConstraints percentWidth="33"/>
+                                            <ColumnConstraints percentWidth="33"/>
+                                            <ColumnConstraints percentWidth="34"/>
+                                        </columnConstraints>
+                                        <VBox styleClass="stat-card" spacing="6" GridPane.columnIndex="0">
+                                            <Label text="TOTAL VENTAS" styleClass="stat-label"/>
+                                            <Label fx:id="repCajaTotalVentas" text="0.00" styleClass="stat-value"/>
+                                            <Label fx:id="repCajaNumVentas" text="0 ventas" styleClass="stat-sub"/>
+                                        </VBox>
+                                        <VBox styleClass="stat-card" spacing="6" GridPane.columnIndex="1">
+                                            <Label text="TOTAL COMPRAS" styleClass="stat-label"/>
+                                            <Label fx:id="repCajaTotalCompras" text="0.00" styleClass="stat-value"/>
+                                            <Label fx:id="repCajaNumCompras" text="0 compras" styleClass="stat-sub"/>
+                                        </VBox>
+                                        <VBox styleClass="stat-card" spacing="6" GridPane.columnIndex="2">
+                                            <Label text="GANANCIA ESTIMADA" styleClass="stat-label"/>
+                                            <Label fx:id="repCajaGanancia" text="0.00" styleClass="stat-value"/>
+                                            <Label fx:id="repCajaGananciaSub" text="Ventas - Compras" styleClass="stat-sub"/>
+                                        </VBox>
+                                    </GridPane>
+                                </VBox>
+                                <VBox styleClass="panel" spacing="10" VBox.vgrow="ALWAYS">
+                                    <Label text="Ventas por dia" styleClass="panel-title"/>
+                                    <BarChart fx:id="repCajaChart" VBox.vgrow="ALWAYS" animated="false">
+                                        <xAxis><CategoryAxis fx:id="repCajaXAxis"/></xAxis>
+                                        <yAxis><NumberAxis fx:id="repCajaYAxis"/></yAxis>
+                                    </BarChart>
+                                </VBox>
+                            </VBox>
+
+                        </StackPane>
                     </VBox>
 
                     <!-- ===================== CONFIGURACIÓN ===================== -->

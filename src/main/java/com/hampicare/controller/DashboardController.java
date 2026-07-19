@@ -29,6 +29,7 @@ import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.Element;
 import com.hampicare.dao.ClienteDAO;
+import com.hampicare.dao.ReporteDAO;
 import com.hampicare.model.Cliente;
 import java.io.FileOutputStream;
 import java.io.File;
@@ -42,12 +43,18 @@ import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
+import javafx.scene.layout.StackPane;
 
 import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 
@@ -140,8 +147,35 @@ public class DashboardController {
     @FXML private TextField searchMedicamentos, searchVentas, searchClientes, searchProveedores, searchCompras, searchUsuarios;
 
     // ---- Reportes ----
-    @FXML private Label lblStockBajoRep, lblUsuariosActivosRep, lblTotalMedicamentosRep;
-    @FXML private Button btnExportarReporte;
+    @FXML private StackPane reportesStack;
+    @FXML private VBox repVentasPanel, repTopMedsPanel, repInventarioPanel, repComprasPanel, repClientesPanel, repCajaPanel;
+    @FXML private Button btnRepVentas, btnRepTopMeds, btnRepInventario, btnRepCompras, btnRepClientes, btnRepCaja;
+    @FXML private DatePicker repVentasDesde, repVentasHasta, repComprasDesde, repComprasHasta, repCajaDesde, repCajaHasta;
+    @FXML private Label repVentasResumen, repComprasResumen;
+    @FXML private TableView<ReporteDAO.VentaPeriodo> tablaRepVentas;
+    @FXML private TableColumn<ReporteDAO.VentaPeriodo, Integer> colRepVenId;
+    @FXML private TableColumn<ReporteDAO.VentaPeriodo, String> colRepVenFactura, colRepVenCliente, colRepVenFecha;
+    @FXML private TableColumn<ReporteDAO.VentaPeriodo, Double> colRepVenTotal;
+    @FXML private TableView<ReporteDAO.TopMedicamento> tablaRepTopMeds;
+    @FXML private TableColumn<ReporteDAO.TopMedicamento, Integer> colRepTopId, colRepTopVendido;
+    @FXML private TableColumn<ReporteDAO.TopMedicamento, String> colRepTopNombre, colRepTopCategoria;
+    @FXML private TableColumn<ReporteDAO.TopMedicamento, Double> colRepTopIngresos;
+    @FXML private TableView<ReporteDAO.InventarioItem> tablaRepInventario;
+    @FXML private TableColumn<ReporteDAO.InventarioItem, Integer> colRepInvId, colRepInvStock;
+    @FXML private TableColumn<ReporteDAO.InventarioItem, String> colRepInvNombre, colRepInvCategoria, colRepInvLote, colRepInvVence, colRepInvEstado;
+    @FXML private TableColumn<ReporteDAO.InventarioItem, Double> colRepInvPrecio;
+    @FXML private TableView<ReporteDAO.CompraPeriodo> tablaRepCompras;
+    @FXML private TableColumn<ReporteDAO.CompraPeriodo, Integer> colRepCompId, colRepCompCantidad;
+    @FXML private TableColumn<ReporteDAO.CompraPeriodo, String> colRepCompProveedor, colRepCompMedicamento, colRepCompFecha;
+    @FXML private TableColumn<ReporteDAO.CompraPeriodo, Double> colRepCompPrecio;
+    @FXML private TableView<ReporteDAO.ClienteReporte> tablaRepClientes;
+    @FXML private TableColumn<ReporteDAO.ClienteReporte, Integer> colRepCliId, colRepCliCompras;
+    @FXML private TableColumn<ReporteDAO.ClienteReporte, String> colRepCliNombre, colRepCliCedula;
+    @FXML private TableColumn<ReporteDAO.ClienteReporte, Double> colRepCliGastado;
+    @FXML private Label repCajaTotalVentas, repCajaNumVentas, repCajaTotalCompras, repCajaNumCompras, repCajaGanancia, repCajaGananciaSub;
+    @FXML private BarChart<String, Number> repCajaChart;
+    @FXML private CategoryAxis repCajaXAxis;
+    @FXML private NumberAxis repCajaYAxis;
 
     // ---- Configuración ----
     @FXML private TextField empresaField, ivaField, umbralStockField, umbralDiasField;
@@ -154,6 +188,7 @@ public class DashboardController {
     private final ClienteDAO clienteDAO = new ClienteDAO();
     private final ProveedorDAO proveedorDAO = new ProveedorDAO();
     private final CompraDAO compraDAO = new CompraDAO();
+    private final ReporteDAO reporteDAO = new ReporteDAO();
 
     private final ObservableList<Cliente> clientes = FXCollections.observableArrayList();
     private final ObservableList<Proveedor> proveedores = FXCollections.observableArrayList();
@@ -192,6 +227,7 @@ public class DashboardController {
         configurarColumnasClientes();
         configurarColumnasProveedores();
         configurarColumnasCompras();
+        configurarColumnasReportes();
         configurarCombosNuevos();
         try {
             System.out.println("[DASHBOARD] Cargando categorias...");
@@ -290,21 +326,24 @@ public class DashboardController {
         try {
             System.out.println("[DASHBOARD] Cargando medicamentos...");
             medicamentos.setAll(medicamentoDAO.listar());
+            filteredMedicamentos = new FilteredList<>(medicamentos, p -> true);
             System.out.println("[DASHBOARD] Medicamentos: " + medicamentos.size());
-            tablaMedicamentos.setItems(medicamentos);
+            tablaMedicamentos.setItems(filteredMedicamentos);
             ventaMedicamentoCombo.setItems(medicamentos);
             entradaMedicamentoCombo.setItems(medicamentos);
 
             System.out.println("[DASHBOARD] Cargando usuarios...");
             usuarios.setAll(usuarioDAO.listar());
+            filteredUsuarios = new FilteredList<>(usuarios, p -> true);
             System.out.println("[DASHBOARD] Usuarios: " + usuarios.size());
-            tablaUsuarios.setItems(usuarios);
+            tablaUsuarios.setItems(filteredUsuarios);
 
             try {
                 System.out.println("[DASHBOARD] Cargando clientes...");
                 clientes.setAll(clienteDAO.listar());
+                filteredClientes = new FilteredList<>(clientes, p -> true);
                 System.out.println("[DASHBOARD] Clientes: " + clientes.size());
-                tablaClientes.setItems(clientes);
+                tablaClientes.setItems(filteredClientes);
                 ventaClienteCombo.setItems(clientes);
             } catch (Exception e) {
                 System.err.println("[DASHBOARD] ERROR cargando clientes: " + e.getMessage());
@@ -313,8 +352,9 @@ public class DashboardController {
             try {
                 System.out.println("[DASHBOARD] Cargando proveedores...");
                 proveedores.setAll(proveedorDAO.listar());
+                filteredProveedores = new FilteredList<>(proveedores, p -> true);
                 System.out.println("[DASHBOARD] Proveedores: " + proveedores.size());
-                tablaProveedores.setItems(proveedores);
+                tablaProveedores.setItems(filteredProveedores);
                 entradaProveedorCombo.setItems(proveedores);
             } catch (Exception e) {
                 System.err.println("[DASHBOARD] ERROR cargando proveedores: " + e.getMessage());
@@ -323,8 +363,9 @@ public class DashboardController {
             try {
                 System.out.println("[DASHBOARD] Cargando compras...");
                 compras.setAll(compraDAO.listar());
+                filteredCompras = new FilteredList<>(compras, p -> true);
                 System.out.println("[DASHBOARD] Compras: " + compras.size());
-                tablaCompras.setItems(compras);
+                tablaCompras.setItems(filteredCompras);
             } catch (Exception e) {
                 System.err.println("[DASHBOARD] ERROR cargando compras: " + e.getMessage());
                 e.printStackTrace();
@@ -358,9 +399,6 @@ public class DashboardController {
         long activos = usuarios.stream().filter(Usuario::isActivo).count();
         stockBajoValueLabel.setText(String.valueOf(stockBajo));
         usuariosActivosValueLabel.setText(String.valueOf(activos));
-        lblStockBajoRep.setText(stockBajo + " artículos con stock bajo");
-        lblUsuariosActivosRep.setText(activos + " usuarios activos");
-        lblTotalMedicamentosRep.setText(medicamentos.size() + " medicamentos registrados");
     }
 
     // ============ NAVEGACIÓN ENTRE SECCIONES ============
@@ -1349,26 +1387,469 @@ public class DashboardController {
 
     // ============ REPORTES ============
 
-    @FXML
-    private void handleExportarReporte() {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Exportar reporte de inventario");
-        chooser.setInitialFileName("reporte_inventario.csv");
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV", "*.csv"));
+    private void showRepPanel(VBox panel, Button btn) {
+        for (VBox p : List.of(repVentasPanel, repTopMedsPanel, repInventarioPanel, repComprasPanel, repClientesPanel, repCajaPanel)) {
+            p.setVisible(false); p.setManaged(false);
+        }
+        for (Button b : List.of(btnRepVentas, btnRepTopMeds, btnRepInventario, btnRepCompras, btnRepClientes, btnRepCaja)) {
+            b.getStyleClass().remove("btn-primary");
+            if (!b.getStyleClass().contains("btn-ghost")) b.getStyleClass().add("btn-ghost");
+        }
+        panel.setVisible(true); panel.setManaged(true);
+        btn.getStyleClass().remove("btn-ghost");
+        btn.getStyleClass().add("btn-primary");
+    }
 
-        java.io.File archivo = chooser.showSaveDialog(btnExportarReporte.getScene().getWindow());
-        if (archivo == null) return;
+    @FXML private void showRepVentas() {
+        showRepPanel(repVentasPanel, btnRepVentas);
+        if (repVentasDesde.getValue() == null) {
+            repVentasDesde.setValue(LocalDate.now().withDayOfMonth(1));
+            repVentasHasta.setValue(LocalDate.now());
+            handleRepVentasBuscar();
+        }
+    }
 
-        try (PrintWriter pw = new PrintWriter(archivo, "UTF-8")) {
-            pw.println("id,nombre,categoria,precio,stock,lote,fecha_vencimiento");
-            for (Medicamento m : medicamentos) {
-                pw.println(m.getId() + "," + m.getNombre() + "," + m.getCategoria() + "," +
-                        m.getPrecio() + "," + m.getStock() + "," + m.getLote() + "," +
-                        (m.getFechaVencimiento() != null ? m.getFechaVencimiento() : ""));
+    @FXML private void showRepTopMeds() {
+        showRepPanel(repTopMedsPanel, btnRepTopMeds);
+        cargarRepTopMeds();
+    }
+
+    @FXML private void showRepInventario() {
+        showRepPanel(repInventarioPanel, btnRepInventario);
+        cargarRepInventario();
+    }
+
+    @FXML private void showRepCompras() {
+        showRepPanel(repComprasPanel, btnRepCompras);
+        if (repComprasDesde.getValue() == null) {
+            repComprasDesde.setValue(LocalDate.now().withDayOfMonth(1));
+            repComprasHasta.setValue(LocalDate.now());
+            handleRepComprasBuscar();
+        }
+    }
+
+    @FXML private void showRepClientes() {
+        showRepPanel(repClientesPanel, btnRepClientes);
+        cargarRepClientes();
+    }
+
+    @FXML private void showRepCaja() {
+        showRepPanel(repCajaPanel, btnRepCaja);
+        if (repCajaDesde.getValue() == null) {
+            repCajaDesde.setValue(LocalDate.now().withDayOfMonth(1));
+            repCajaHasta.setValue(LocalDate.now());
+            handleRepCajaBuscar();
+        }
+    }
+
+    // ---- Configurar columnas reportes ----
+    private void configurarColumnasReportes() {
+        colRepVenId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colRepVenFactura.setCellValueFactory(new PropertyValueFactory<>("numeroFactura"));
+        colRepVenCliente.setCellValueFactory(new PropertyValueFactory<>("cliente"));
+        colRepVenFecha.setCellValueFactory(new PropertyValueFactory<>("fecha"));
+        colRepVenFecha.setCellFactory(col -> new TableCell<>() {
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getTableView().getItems().get(getIndex()) == null) setText(null);
+                else {
+                    var f = getTableView().getItems().get(getIndex()).getFecha();
+                    setText(f != null ? f.format(FMT_FECHA_VENTA) : "");
+                }
             }
-            Alertas.info("Reporte exportado correctamente en:\n" + archivo.getAbsolutePath());
+        });
+        colRepVenTotal.setCellValueFactory(new PropertyValueFactory<>("total"));
+        colRepVenTotal.setCellFactory(col -> new TableCell<>() {
+            @Override protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : String.format("$%.2f", item));
+            }
+        });
+
+        colRepTopId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colRepTopNombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
+        colRepTopCategoria.setCellValueFactory(new PropertyValueFactory<>("categoria"));
+        colRepTopVendido.setCellValueFactory(new PropertyValueFactory<>("totalVendido"));
+        colRepTopIngresos.setCellValueFactory(new PropertyValueFactory<>("totalIngresos"));
+        colRepTopIngresos.setCellFactory(col -> new TableCell<>() {
+            @Override protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : String.format("$%.2f", item));
+            }
+        });
+
+        colRepInvId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colRepInvNombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
+        colRepInvCategoria.setCellValueFactory(new PropertyValueFactory<>("categoria"));
+        colRepInvStock.setCellValueFactory(new PropertyValueFactory<>("stock"));
+        colRepInvPrecio.setCellValueFactory(new PropertyValueFactory<>("precio"));
+        colRepInvPrecio.setCellFactory(col -> new TableCell<>() {
+            @Override protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : String.format("$%.2f", item));
+            }
+        });
+        colRepInvLote.setCellValueFactory(new PropertyValueFactory<>("lote"));
+        colRepInvVence.setCellValueFactory(new PropertyValueFactory<>("fechaVencimiento"));
+        colRepInvEstado.setCellValueFactory(new PropertyValueFactory<>(""));
+        colRepInvEstado.setCellFactory(col -> new TableCell<>() {
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getTableView().getItems().get(getIndex()) == null) { setText(null); return; }
+                var inv = getTableView().getItems().get(getIndex());
+                if (inv.isStockBajo() && inv.isPorVencer()) setText("Stock bajo + por vencer");
+                else if (inv.isStockBajo()) setText("Stock bajo");
+                else if (inv.isPorVencer()) setText("Por vencer");
+                else setText("OK");
+            }
+        });
+
+        colRepCompId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colRepCompProveedor.setCellValueFactory(new PropertyValueFactory<>("proveedor"));
+        colRepCompMedicamento.setCellValueFactory(new PropertyValueFactory<>("medicamento"));
+        colRepCompCantidad.setCellValueFactory(new PropertyValueFactory<>("cantidad"));
+        colRepCompPrecio.setCellValueFactory(new PropertyValueFactory<>("precioCompra"));
+        colRepCompPrecio.setCellFactory(col -> new TableCell<>() {
+            @Override protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : String.format("$%.2f", item));
+            }
+        });
+        colRepCompFecha.setCellValueFactory(new PropertyValueFactory<>("fecha"));
+        colRepCompFecha.setCellFactory(col -> new TableCell<>() {
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getTableView().getItems().get(getIndex()) == null) setText(null);
+                else {
+                    var f = getTableView().getItems().get(getIndex()).getFecha();
+                    setText(f != null ? f.format(FMT_FECHA_VENTA) : "");
+                }
+            }
+        });
+
+        colRepCliId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colRepCliNombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
+        colRepCliCedula.setCellValueFactory(new PropertyValueFactory<>("cedula"));
+        colRepCliCompras.setCellValueFactory(new PropertyValueFactory<>("totalCompras"));
+        colRepCliGastado.setCellValueFactory(new PropertyValueFactory<>("totalGastado"));
+        colRepCliGastado.setCellFactory(col -> new TableCell<>() {
+            @Override protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : String.format("$%.2f", item));
+            }
+        });
+    }
+
+    // ---- Cargar datos reportes ----
+    @FXML private void handleRepVentasBuscar() {
+        LocalDate d = repVentasDesde.getValue() != null ? repVentasDesde.getValue() : LocalDate.now().withDayOfMonth(1);
+        LocalDate h = repVentasHasta.getValue() != null ? repVentasHasta.getValue() : LocalDate.now();
+        try {
+            List<ReporteDAO.VentaPeriodo> lista = reporteDAO.ventasPorPeriodo(d, h);
+            tablaRepVentas.setItems(FXCollections.observableArrayList(lista));
+            double total = lista.stream().mapToDouble(ReporteDAO.VentaPeriodo::getTotal).sum();
+            repVentasResumen.setText(String.format("Total: $%.2f  |  %d ventas", total, lista.size()));
         } catch (Exception e) {
-            Alertas.error("No se pudo exportar el reporte.\n" + e.getMessage());
+            Alertas.error("Error cargando ventas: " + e.getMessage());
+        }
+    }
+
+    @FXML private void handleRepVentasPDF() {
+        LocalDate d = repVentasDesde.getValue() != null ? repVentasDesde.getValue() : LocalDate.now().withDayOfMonth(1);
+        LocalDate h = repVentasHasta.getValue() != null ? repVentasHasta.getValue() : LocalDate.now();
+        try {
+            List<ReporteDAO.VentaPeriodo> lista = reporteDAO.ventasPorPeriodo(d, h);
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Exportar reporte de ventas");
+            chooser.setInitialFileName("reporte_ventas.pdf");
+            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+            java.io.File archivo = chooser.showSaveDialog(tablaRepVentas.getScene().getWindow());
+            if (archivo == null) return;
+            Document doc = new Document(PageSize.LETTER);
+            PdfWriter.getInstance(doc, new FileOutputStream(archivo));
+            doc.open();
+            doc.add(new Paragraph("REPORTE DE VENTAS - HampiCare", new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD)));
+            doc.add(new Paragraph("Periodo: " + d + " al " + h));
+            doc.add(new Paragraph(" "));
+            PdfPTable tabla = new PdfPTable(4);
+            tabla.setWidthPercentage(100);
+            String[] cols = {"Factura", "Cliente", "Fecha", "Total"};
+            for (String c : cols) {
+                PdfPCell cell = new PdfPCell(new Phrase(c));
+                cell.setBackgroundColor(BaseColor.DARK_GRAY);
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cell.setBorderWidth(2);
+                tabla.addCell(cell);
+            }
+            double totalGeneral = 0;
+            for (ReporteDAO.VentaPeriodo v : lista) {
+                tabla.addCell(v.getNumeroFactura());
+                tabla.addCell(v.getCliente());
+                tabla.addCell(v.getFecha() != null ? v.getFecha().format(FMT_FECHA_VENTA) : "");
+                tabla.addCell(String.format("$%.2f", v.getTotal()));
+                totalGeneral += v.getTotal();
+            }
+            doc.add(tabla);
+            doc.add(new Paragraph(" "));
+            doc.add(new Paragraph("TOTAL: $" + String.format("%.2f", totalGeneral) + "  (" + lista.size() + " ventas)", new Font(Font.FontFamily.HELVETICA, 12, Font.BOLD)));
+            doc.close();
+            Alertas.info("PDF exportado:\n" + archivo.getAbsolutePath());
+        } catch (Exception e) {
+            Alertas.error("Error exportando PDF: " + e.getMessage());
+        }
+    }
+
+    private void cargarRepTopMeds() {
+        try {
+            List<ReporteDAO.TopMedicamento> lista = reporteDAO.topMedicamentos();
+            tablaRepTopMeds.setItems(FXCollections.observableArrayList(lista));
+        } catch (Exception e) {
+            Alertas.error("Error cargando top medicamentos: " + e.getMessage());
+        }
+    }
+
+    @FXML private void handleRepTopMedsPDF() {
+        try {
+            List<ReporteDAO.TopMedicamento> lista = reporteDAO.topMedicamentos();
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Exportar top medicamentos");
+            chooser.setInitialFileName("top_medicamentos.pdf");
+            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+            java.io.File archivo = chooser.showSaveDialog(tablaRepTopMeds.getScene().getWindow());
+            if (archivo == null) return;
+            Document doc = new Document(PageSize.LETTER);
+            PdfWriter.getInstance(doc, new FileOutputStream(archivo));
+            doc.open();
+            doc.add(new Paragraph("TOP MEDICAMENTOS MAS VENDIDOS - HampiCare", new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD)));
+            doc.add(new Paragraph(" "));
+            PdfPTable tabla = new PdfPTable(4);
+            tabla.setWidthPercentage(100);
+            String[] cols = {"Medicamento", "Categoria", "Unidades", "Ingresos"};
+            for (String c : cols) {
+                PdfPCell cell = new PdfPCell(new Phrase(c));
+                cell.setBackgroundColor(BaseColor.DARK_GRAY);
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                tabla.addCell(cell);
+            }
+            for (ReporteDAO.TopMedicamento m : lista) {
+                tabla.addCell(m.getNombre());
+                tabla.addCell(m.getCategoria());
+                tabla.addCell(String.valueOf(m.getTotalVendido()));
+                tabla.addCell(String.format("$%.2f", m.getTotalIngresos()));
+            }
+            doc.add(tabla);
+            doc.close();
+            Alertas.info("PDF exportado:\n" + archivo.getAbsolutePath());
+        } catch (Exception e) {
+            Alertas.error("Error exportando PDF: " + e.getMessage());
+        }
+    }
+
+    private void cargarRepInventario() {
+        try {
+            List<ReporteDAO.InventarioItem> lista = reporteDAO.inventarioActual();
+            tablaRepInventario.setItems(FXCollections.observableArrayList(lista));
+        } catch (Exception e) {
+            Alertas.error("Error cargando inventario: " + e.getMessage());
+        }
+    }
+
+    @FXML private void handleRepInventarioPDF() {
+        try {
+            List<ReporteDAO.InventarioItem> lista = reporteDAO.inventarioActual();
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Exportar inventario");
+            chooser.setInitialFileName("inventario.pdf");
+            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+            java.io.File archivo = chooser.showSaveDialog(tablaRepInventario.getScene().getWindow());
+            if (archivo == null) return;
+            Document doc = new Document(PageSize.LETTER_LANDSCAPE);
+            PdfWriter.getInstance(doc, new FileOutputStream(archivo));
+            doc.open();
+            doc.add(new Paragraph("REPORTE DE INVENTARIO - HampiCare", new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD)));
+            doc.add(new Paragraph(" "));
+            PdfPTable tabla = new PdfPTable(6);
+            tabla.setWidthPercentage(100);
+            String[] cols = {"Medicamento", "Categoria", "Stock", "Precio", "Lote", "Estado"};
+            for (String c : cols) {
+                PdfPCell cell = new PdfPCell(new Phrase(c));
+                cell.setBackgroundColor(BaseColor.DARK_GRAY);
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                tabla.addCell(cell);
+            }
+            for (ReporteDAO.InventarioItem i : lista) {
+                tabla.addCell(i.getNombre());
+                tabla.addCell(i.getCategoria());
+                tabla.addCell(String.valueOf(i.getStock()));
+                tabla.addCell(String.format("$%.2f", i.getPrecio()));
+                tabla.addCell(i.getLote());
+                String estado = i.isStockBajo() ? "Stock bajo" : "OK";
+                if (i.isPorVencer()) estado += " | Por vencer";
+                tabla.addCell(estado);
+            }
+            doc.add(tabla);
+            doc.close();
+            Alertas.info("PDF exportado:\n" + archivo.getAbsolutePath());
+        } catch (Exception e) {
+            Alertas.error("Error exportando PDF: " + e.getMessage());
+        }
+    }
+
+    @FXML private void handleRepComprasBuscar() {
+        LocalDate d = repComprasDesde.getValue() != null ? repComprasDesde.getValue() : LocalDate.now().withDayOfMonth(1);
+        LocalDate h = repComprasHasta.getValue() != null ? repComprasHasta.getValue() : LocalDate.now();
+        try {
+            List<ReporteDAO.CompraPeriodo> lista = reporteDAO.comprasPorPeriodo(d, h);
+            tablaRepCompras.setItems(FXCollections.observableArrayList(lista));
+            double total = lista.stream().mapToDouble(c -> c.getPrecioCompra() * c.getCantidad()).sum();
+            repComprasResumen.setText(String.format("Total: $%.2f  |  %d compras", total, lista.size()));
+        } catch (Exception e) {
+            Alertas.error("Error cargando compras: " + e.getMessage());
+        }
+    }
+
+    @FXML private void handleRepComprasPDF() {
+        LocalDate d = repComprasDesde.getValue() != null ? repComprasDesde.getValue() : LocalDate.now().withDayOfMonth(1);
+        LocalDate h = repComprasHasta.getValue() != null ? repComprasHasta.getValue() : LocalDate.now();
+        try {
+            List<ReporteDAO.CompraPeriodo> lista = reporteDAO.comprasPorPeriodo(d, h);
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Exportar reporte de compras");
+            chooser.setInitialFileName("reporte_compras.pdf");
+            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+            java.io.File archivo = chooser.showSaveDialog(tablaRepCompras.getScene().getWindow());
+            if (archivo == null) return;
+            Document doc = new Document(PageSize.LETTER);
+            PdfWriter.getInstance(doc, new FileOutputStream(archivo));
+            doc.open();
+            doc.add(new Paragraph("REPORTE DE COMPRAS - HampiCare", new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD)));
+            doc.add(new Paragraph("Periodo: " + d + " al " + h));
+            doc.add(new Paragraph(" "));
+            PdfPTable tabla = new PdfPTable(5);
+            tabla.setWidthPercentage(100);
+            String[] cols = {"Proveedor", "Medicamento", "Cantidad", "P. Compra", "Fecha"};
+            for (String c : cols) {
+                PdfPCell cell = new PdfPCell(new Phrase(c));
+                cell.setBackgroundColor(BaseColor.DARK_GRAY);
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                tabla.addCell(cell);
+            }
+            double totalGeneral = 0;
+            for (ReporteDAO.CompraPeriodo co : lista) {
+                tabla.addCell(co.getProveedor());
+                tabla.addCell(co.getMedicamento());
+                tabla.addCell(String.valueOf(co.getCantidad()));
+                tabla.addCell(String.format("$%.2f", co.getPrecioCompra()));
+                tabla.addCell(co.getFecha() != null ? co.getFecha().format(FMT_FECHA_VENTA) : "");
+                totalGeneral += co.getPrecioCompra() * co.getCantidad();
+            }
+            doc.add(tabla);
+            doc.add(new Paragraph(" "));
+            doc.add(new Paragraph("TOTAL: $" + String.format("%.2f", totalGeneral) + "  (" + lista.size() + " compras)", new Font(Font.FontFamily.HELVETICA, 12, Font.BOLD)));
+            doc.close();
+            Alertas.info("PDF exportado:\n" + archivo.getAbsolutePath());
+        } catch (Exception e) {
+            Alertas.error("Error exportando PDF: " + e.getMessage());
+        }
+    }
+
+    private void cargarRepClientes() {
+        try {
+            List<ReporteDAO.ClienteReporte> lista = reporteDAO.clientesReporte();
+            tablaRepClientes.setItems(FXCollections.observableArrayList(lista));
+        } catch (Exception e) {
+            Alertas.error("Error cargando clientes: " + e.getMessage());
+        }
+    }
+
+    @FXML private void handleRepClientesPDF() {
+        try {
+            List<ReporteDAO.ClienteReporte> lista = reporteDAO.clientesReporte();
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Exportar reporte de clientes");
+            chooser.setInitialFileName("reporte_clientes.pdf");
+            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+            java.io.File archivo = chooser.showSaveDialog(tablaRepClientes.getScene().getWindow());
+            if (archivo == null) return;
+            Document doc = new Document(PageSize.LETTER);
+            PdfWriter.getInstance(doc, new FileOutputStream(archivo));
+            doc.open();
+            doc.add(new Paragraph("REPORTE DE CLIENTES - HampiCare", new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD)));
+            doc.add(new Paragraph(" "));
+            PdfPTable tabla = new PdfPTable(4);
+            tabla.setWidthPercentage(100);
+            String[] cols = {"Cliente", "Cedula", "Compras", "Total Gastado"};
+            for (String c : cols) {
+                PdfPCell cell = new PdfPCell(new Phrase(c));
+                cell.setBackgroundColor(BaseColor.DARK_GRAY);
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                tabla.addCell(cell);
+            }
+            for (ReporteDAO.ClienteReporte cl : lista) {
+                tabla.addCell(cl.getNombre());
+                tabla.addCell(cl.getCedula());
+                tabla.addCell(String.valueOf(cl.getTotalCompras()));
+                tabla.addCell(String.format("$%.2f", cl.getTotalGastado()));
+            }
+            doc.add(tabla);
+            doc.close();
+            Alertas.info("PDF exportado:\n" + archivo.getAbsolutePath());
+        } catch (Exception e) {
+            Alertas.error("Error exportando PDF: " + e.getMessage());
+        }
+    }
+
+    @FXML private void handleRepCajaBuscar() {
+        LocalDate d = repCajaDesde.getValue() != null ? repCajaDesde.getValue() : LocalDate.now().withDayOfMonth(1);
+        LocalDate h = repCajaHasta.getValue() != null ? repCajaHasta.getValue() : LocalDate.now();
+        try {
+            ReporteDAO.ResumenCaja res = reporteDAO.resumenCaja(d, h);
+            repCajaTotalVentas.setText(String.format("$%.2f", res.getTotalVentas()));
+            repCajaNumVentas.setText(res.getCantidadVentas() + " ventas");
+            repCajaTotalCompras.setText(String.format("$%.2f", res.getTotalCompras()));
+            repCajaNumCompras.setText(res.getCantidadCompras() + " compras");
+            repCajaGanancia.setText(String.format("$%.2f", res.getGananciaEstimada()));
+            repCajaGananciaSub.setText(res.getGananciaEstimada() >= 0 ? "Ganancia" : "Perdida");
+
+            Map<String, double[]> porDia = reporteDAO.ventasPorDia(d, h);
+            XYChart.Series<String, Number> series = new XYChart.Series<>();
+            series.setName("Ventas");
+            for (Map.Entry<String, double[]> e : porDia.entrySet()) {
+                series.getData().add(new XYChart.Data<>(e.getKey(), e.getValue()[1]));
+            }
+            repCajaChart.getData().clear();
+            repCajaChart.getData().add(series);
+        } catch (Exception e) {
+            Alertas.error("Error cargando resumen de caja: " + e.getMessage());
+        }
+    }
+
+    @FXML private void handleRepCajaPDF() {
+        LocalDate d = repCajaDesde.getValue() != null ? repCajaDesde.getValue() : LocalDate.now().withDayOfMonth(1);
+        LocalDate h = repCajaHasta.getValue() != null ? repCajaHasta.getValue() : LocalDate.now();
+        try {
+            ReporteDAO.ResumenCaja res = reporteDAO.resumenCaja(d, h);
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Exportar resumen de caja");
+            chooser.setInitialFileName("resumen_caja.pdf");
+            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+            java.io.File archivo = chooser.showSaveDialog(repCajaChart.getScene().getWindow());
+            if (archivo == null) return;
+            Document doc = new Document(PageSize.LETTER);
+            PdfWriter.getInstance(doc, new FileOutputStream(archivo));
+            doc.open();
+            doc.add(new Paragraph("RESUMEN DE CAJA - HampiCare", new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD)));
+            doc.add(new Paragraph("Periodo: " + d + " al " + h));
+            doc.add(new Paragraph(" "));
+            doc.add(new Paragraph("Total Ventas:    $" + String.format("%.2f", res.getTotalVentas()) + "  (" + res.getCantidadVentas() + " transacciones)"));
+            doc.add(new Paragraph("Total Compras:   $" + String.format("%.2f", res.getTotalCompras()) + "  (" + res.getCantidadCompras() + " transacciones)"));
+            doc.add(new Paragraph(" "));
+            doc.add(new Paragraph("GANANCIA ESTIMADA: $" + String.format("%.2f", res.getGananciaEstimada()),
+                    new Font(Font.FontFamily.HELVETICA, 14, Font.BOLD)));
+            doc.close();
+            Alertas.info("PDF exportado:\n" + archivo.getAbsolutePath());
+        } catch (Exception e) {
+            Alertas.error("Error exportando PDF: " + e.getMessage());
         }
     }
 
@@ -1441,7 +1922,12 @@ public class DashboardController {
         if (usuarioActual.getModulosPermitidos().contains("VENTAS")) {
             try {
                 System.out.println("[DASHBOARD] construirActividad: cargando ultimas ventas...");
-                List<Venta> ultimas = ventaDAO.ultimasVentas(usuarioActual.getId(), 3);
+                List<Venta> ultimas;
+                if (usuarioActual.getModulosPermitidos().contains("USUARIOS")) {
+                    ultimas = ventaDAO.ultimasVentasTodas(3);
+                } else {
+                    ultimas = ventaDAO.ultimasVentas(usuarioActual.getId(), 3);
+                }
                 System.out.println("[DASHBOARD] ultimasVentas: " + ultimas.size() + " registros");
                 if (ultimas.isEmpty()) {
                     agregarActividad("n", "\uD83E\uDDFE", "Aún no has registrado ventas",
@@ -1493,6 +1979,8 @@ public class DashboardController {
                 System.out.println("[DASHBOARD] cargarHistorialVentas: listarPorUsuario id=" + usuarioActual.getId());
                 historialVentas.setAll(ventaDAO.listarPorUsuario(usuarioActual.getId()));
             }
+            filteredVentas = new FilteredList<>(historialVentas, p -> true);
+            tablaHistorialVentas.setItems(filteredVentas);
             System.out.println("[DASHBOARD] Historial ventas cargado: " + historialVentas.size() + " registros");
         } catch (Exception e) {
             System.err.println("[DASHBOARD] ERROR cargando historial ventas: " + e.getMessage());
@@ -1504,7 +1992,12 @@ public class DashboardController {
     private void actualizarResumenVentasHoy() {
         try {
             System.out.println("[DASHBOARD] resumenHoy: llamando a ventaDAO...");
-            double[] resumen = ventaDAO.resumenHoy(usuarioActual.getId());
+            double[] resumen;
+            if (usuarioActual.getModulosPermitidos().contains("USUARIOS")) {
+                resumen = ventaDAO.resumenHoyTodas();
+            } else {
+                resumen = ventaDAO.resumenHoy(usuarioActual.getId());
+            }
             int cantidadVentas = (int) resumen[0];
             double total = resumen[1];
             ventasHoyValueLabel.setText(String.format("$%.2f", total));
