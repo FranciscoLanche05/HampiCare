@@ -18,22 +18,35 @@ public final class Conexion {
 
     private Conexion() {
         try {
+            System.out.println("[DB] Conectando a: " + URL);
             conn = DriverManager.getConnection(URL, USUARIO, CLAVE);
+            System.out.println("[DB] Conexion establecida OK");
             initDatabase();
         } catch (SQLException e) {
+            System.err.println("[DB] FALLO Conexion: " + e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException("No se pudo conectar a la base de datos: " + e.getMessage(), e);
         }
     }
     
     private void initDatabase() {
         try (Statement stmt = conn.createStatement()) {
-            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'USUARIOS'");
-            if (rs.next() && rs.getInt(1) == 0) {
-                System.out.println("Creando la base de datos por primera vez...");
-                stmt.execute("RUNSCRIPT FROM './src/main/java/com/hampicare/db/Script.sql'");
+            System.out.println("[DB] Verificando si existen tablas...");
+            ResultSet rs = stmt.executeQuery(
+                    "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'USUARIOS' " +
+                    "OR table_name = 'usuarios'");
+            int count = rs.next() ? rs.getInt(1) : -1;
+            System.out.println("[DB] Tablas encontradas: " + count);
+            if (count == 0) {
+                System.out.println("[DB] Ejecutando script de inicializacion...");
+                stmt.execute("RUNSCRIPT FROM 'classpath:/com/hampicare/db/ScriptH2.sql'");
+                System.out.println("[DB] Script ejecutado OK");
+            } else {
+                System.out.println("[DB] Base de datos ya inicializada.");
             }
         } catch (Exception e) {
-            System.err.println("Error al ejecutar el script inicial: " + e.getMessage());
+            System.err.println("[DB] ERROR en initDatabase: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

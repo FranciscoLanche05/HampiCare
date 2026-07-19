@@ -69,16 +69,19 @@ public class UsuarioDAO implements ICRUD<Usuario> {
     public Usuario autenticar(String correo, String contrasena) throws SQLException {
         String sql = "SELECT id, nombre, correo, contrasena, rol, activo FROM usuarios " +
                 "WHERE correo=? AND contrasena=? AND activo=true";
+        System.out.println("[UsuarioDAO] autenticar: " + sql);
         try (Connection c = Conexion.getInstancia().getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, correo);
             ps.setString(2, contrasena);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
+                    System.out.println("[UsuarioDAO] autenticar: usuario encontrado id=" + rs.getInt("id"));
                     return mapear(rs);
                 }
             }
         }
+        System.out.println("[UsuarioDAO] autenticar: usuario NO encontrado");
         return null;
     }
 

@@ -14,7 +14,7 @@ public class Cajero extends Usuario {
 
     @Override
     public Set<String> getModulosPermitidos() {
-        return Set.of("HOME", "VENTAS", "INVENTARIO");
+        return Set.of("HOME", "VENTAS", "INVENTARIO", "CLIENTES");
     }
 
     @Override

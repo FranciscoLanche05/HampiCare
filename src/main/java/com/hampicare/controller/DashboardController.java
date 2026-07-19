@@ -8,23 +8,44 @@ import com.hampicare.dao.MedicamentoDAO;
 import com.hampicare.dao.MovimientoInventarioDAO;
 import com.hampicare.dao.UsuarioDAO;
 import com.hampicare.dao.VentaDAO;
+import com.hampicare.dao.ProveedorDAO;
+import com.hampicare.dao.CompraDAO;
 import com.hampicare.model.*;
 import com.hampicare.service.PDFGeneratorService;
 import com.hampicare.util.Alertas;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import org.controlsfx.control.textfield.TextFields;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.Phrase;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
+import com.itextpdf.text.Font;
+import com.itextpdf.text.PageSize;
+import com.itextpdf.text.BaseColor;
+import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.Element;
+import com.hampicare.dao.ClienteDAO;
+import com.hampicare.model.Cliente;
+import java.io.FileOutputStream;
+import java.io.File;
+import java.time.format.DateTimeFormatter;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
 
-import java.io.File;
 import java.io.PrintWriter;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
@@ -34,12 +55,13 @@ public class DashboardController {
 
     // ---- Sidebar ----
     @FXML private javafx.scene.layout.BorderPane rootPane;
-    @FXML private Button navHome, navInventario, navVentas, navUsuarios, navReportes, navConfiguracion;
+    @FXML private Button navHome, navInventario, navVentas, navUsuarios, navReportes, navConfiguracion, navClientes, navCompras, navProveedores;
     @FXML private Label userInitialsLabel, userNameLabel, userRoleLabel;
     @FXML private Label sectionTitleLabel;
 
     // ---- Secciones ----
     @FXML private VBox homeView, inventarioView, ventasView, usuariosView, reportesView, configuracionView;
+    @FXML private javafx.scene.layout.VBox clientesView, proveedoresView, comprasView;
 
     // ---- Home ----
     @FXML private javafx.scene.text.Text welcomeNameLabel;
@@ -48,9 +70,11 @@ public class DashboardController {
     @FXML private VBox activityContainer;
     @FXML private HBox ventasHoyCard;
     @FXML private Label ventasHoyValueLabel, ventasHoyCountLabel;
+    @FXML private Label ventasHoyIconLabel;
 
     // ---- Inventario (CRUD de los medicamentos) ----
-    @FXML private TextField nombreMedField, categoriaMedField, precioMedField, stockMedField, loteMedField;
+    @FXML private TextField nombreMedField, precioMedField, stockMedField, loteMedField;
+    @FXML private ComboBox<String> categoriaMedField;
     @FXML private DatePicker fechaVencMedPicker;
     @FXML private Button btnGuardarMed, btnActualizarMed, btnEliminarMed, btnLimpiarMed;
     @FXML private TableView<Medicamento> tablaMedicamentos;
@@ -72,6 +96,7 @@ public class DashboardController {
     @FXML private TableColumn<DetalleVenta, Double> colCarritoPrecio, colCarritoSubtotal;
     @FXML private TableView<Venta> tablaHistorialVentas;
     @FXML private TableColumn<Venta, Integer> colVentaId;
+    @FXML private TableColumn<Venta, String> colVentaCliente;
     @FXML private TableColumn<Venta, String> colVentaFactura, colVentaFecha;
     @FXML private TableColumn<Venta, Double> colVentaTotal;
 
@@ -85,6 +110,35 @@ public class DashboardController {
     @FXML private TableColumn<Usuario, String> colNombreUsu, colCorreoUsu, colRolUsu;
     @FXML private TableColumn<Usuario, Boolean> colActivoUsu;
 
+
+    // ---- Clientes ----
+    @FXML private TextField nombreCliField, apellidoCliField, cedulaCliField, correoCliField, telefonoCliField, sectorCliField;
+    @FXML private Button btnGuardarCli, btnActualizarCli, btnEliminarCli, btnLimpiarCli;
+    @FXML private TableView<Cliente> tablaClientes;
+    @FXML private TableColumn<Cliente, String> colCliCedula, colCliNombres, colCliApellidos, colCliCorreo, colCliTelefono, colCliSector;
+
+    // ---- Proveedores ----
+    @FXML private TextField nombreProvField, correoProvField, telefonoProvField;
+    @FXML private Button btnGuardarProv, btnActualizarProv, btnEliminarProv, btnLimpiarProv;
+    @FXML private TableView<Proveedor> tablaProveedores;
+    @FXML private TableColumn<Proveedor, Integer> colProvId;
+    @FXML private TableColumn<Proveedor, String> colProvNombre, colProvCorreo, colProvTelefono;
+
+    // ---- Compras ----
+    @FXML private ComboBox<Proveedor> entradaProveedorCombo;
+    @FXML private TextField entradaPrecioCompraField;
+    @FXML private TableView<Compra> tablaCompras;
+    @FXML private TableColumn<Compra, Integer> colCompraId, colCompraCantidad;
+    @FXML private TableColumn<Compra, String> colCompraProveedor, colCompraMedicamento;
+    @FXML private TableColumn<Compra, Double> colCompraPrecio;
+    @FXML private TableColumn<Compra, String> colCompraFecha;
+
+    // ---- Ventas Cliente ----
+    @FXML private ComboBox<Cliente> ventaClienteCombo;
+
+    // ---- Search ----
+    @FXML private TextField searchMedicamentos, searchVentas, searchClientes, searchProveedores, searchCompras, searchUsuarios;
+
     // ---- Reportes ----
     @FXML private Label lblStockBajoRep, lblUsuariosActivosRep, lblTotalMedicamentosRep;
     @FXML private Button btnExportarReporte;
@@ -97,6 +151,24 @@ public class DashboardController {
     private final UsuarioDAO usuarioDAO = new UsuarioDAO();
     private final ConfiguracionDAO configuracionDAO = new ConfiguracionDAO();
     private final VentaDAO ventaDAO = new VentaDAO();
+    private final ClienteDAO clienteDAO = new ClienteDAO();
+    private final ProveedorDAO proveedorDAO = new ProveedorDAO();
+    private final CompraDAO compraDAO = new CompraDAO();
+
+    private final ObservableList<Cliente> clientes = FXCollections.observableArrayList();
+    private final ObservableList<Proveedor> proveedores = FXCollections.observableArrayList();
+    private final ObservableList<Compra> compras = FXCollections.observableArrayList();
+
+    private FilteredList<Medicamento> filteredMedicamentos;
+    private FilteredList<Cliente> filteredClientes;
+    private FilteredList<Proveedor> filteredProveedores;
+    private FilteredList<Compra> filteredCompras;
+    private FilteredList<Venta> filteredVentas;
+    private FilteredList<Usuario> filteredUsuarios;
+
+    private Cliente clienteSeleccionado;
+    private Proveedor proveedorSeleccionado;
+
     private final MovimientoInventarioDAO movimientoInventarioDAO = new MovimientoInventarioDAO();
     private final PDFGeneratorService pdfGeneratorService = new PDFGeneratorService();
 
@@ -111,10 +183,24 @@ public class DashboardController {
 
     @FXML
     public void initialize() {
+        System.out.println("[DASHBOARD] initialize() INICIO");
+        if (ventasHoyIconLabel != null) ventasHoyIconLabel.setText("$");
         configurarColumnasMedicamentos();
         configurarColumnasUsuarios();
         configurarColumnasVentas();
         configurarCombosMedicamento();
+        configurarColumnasClientes();
+        configurarColumnasProveedores();
+        configurarColumnasCompras();
+        configurarCombosNuevos();
+        try {
+            System.out.println("[DASHBOARD] Cargando categorias...");
+            categoriaMedField.getItems().setAll(medicamentoDAO.obtenerCategoriasUnicas());
+            System.out.println("[DASHBOARD] Categorias cargadas OK");
+        } catch (java.sql.SQLException e) {
+            System.err.println("[DASHBOARD] ERROR cargando categorias: " + e.getMessage());
+            e.printStackTrace();
+        }
         rolUsuCombo.setItems(FXCollections.observableArrayList(
                 Usuario.ROL_ADMIN, Usuario.ROL_CAJERO, Usuario.ROL_REPORTES));
 
@@ -126,12 +212,25 @@ public class DashboardController {
         tablaUsuarios.getSelectionModel().selectedItemProperty().addListener((obs, old, sel) -> {
             if (sel != null) cargarFormularioUsuario(sel);
         });
+        if (tablaClientes != null) {
+            tablaClientes.getSelectionModel().selectedItemProperty().addListener((obs, old, sel) -> {
+                clienteSeleccionado = sel;
+                if (sel != null) cargarFormularioCliente(sel);
+            });
+        }
+        if (tablaProveedores != null) {
+            tablaProveedores.getSelectionModel().selectedItemProperty().addListener((obs, old, sel) -> {
+                proveedorSeleccionado = sel;
+                if (sel != null) cargarFormularioProveedor(sel);
+            });
+        }
 
         tablaCarrito.setItems(carrito);
         tablaHistorialVentas.setItems(historialVentas);
     }
 
     public void setUsuario(Usuario usuario) {
+        System.out.println("[DASHBOARD] setUsuario() INICIO - " + usuario.getNombre());
         this.usuarioActual = usuario;
 
         userNameLabel.setText(usuario.getNombre());
@@ -139,14 +238,12 @@ public class DashboardController {
         userInitialsLabel.setText(iniciales(usuario.getNombre()));
         welcomeNameLabel.setText(usuario.getNombre());
 
-        // Polimorfismo -> CSS
         rootPane.getStyleClass().removeIf(c -> c.startsWith("role-"));
         rootPane.getStyleClass().add(usuario.getClaseColorRol());
 
         Set<String> modulos = usuario.getModulosPermitidos();
         aplicarPermisos(modulos);
 
-        // Cajero/Reportes (solo lectura / solo operaciones)
         btnEliminarMed.setVisible(usuario.puedeEliminar());
         btnEliminarMed.setManaged(usuario.puedeEliminar());
 
@@ -173,27 +270,85 @@ public class DashboardController {
 
         navConfiguracion.setVisible(modulos.contains("CONFIGURACION"));
         navConfiguracion.setManaged(modulos.contains("CONFIGURACION"));
+
+        if (navClientes != null) {
+            navClientes.setVisible(modulos.contains("CLIENTES"));
+            navClientes.setManaged(modulos.contains("CLIENTES"));
+        }
+        if (navCompras != null) {
+            navCompras.setVisible(modulos.contains("COMPRAS"));
+            navCompras.setManaged(modulos.contains("COMPRAS"));
+        }
+        if (navProveedores != null) {
+            navProveedores.setVisible(modulos.contains("PROVEEDORES"));
+            navProveedores.setManaged(modulos.contains("PROVEEDORES"));
+        }
     }
 
     private void cargarDatosIniciales() {
+        System.out.println("[DASHBOARD] cargarDatosIniciales() INICIO");
         try {
+            System.out.println("[DASHBOARD] Cargando medicamentos...");
             medicamentos.setAll(medicamentoDAO.listar());
+            System.out.println("[DASHBOARD] Medicamentos: " + medicamentos.size());
             tablaMedicamentos.setItems(medicamentos);
             ventaMedicamentoCombo.setItems(medicamentos);
             entradaMedicamentoCombo.setItems(medicamentos);
 
+            System.out.println("[DASHBOARD] Cargando usuarios...");
             usuarios.setAll(usuarioDAO.listar());
+            System.out.println("[DASHBOARD] Usuarios: " + usuarios.size());
             tablaUsuarios.setItems(usuarios);
 
+            try {
+                System.out.println("[DASHBOARD] Cargando clientes...");
+                clientes.setAll(clienteDAO.listar());
+                System.out.println("[DASHBOARD] Clientes: " + clientes.size());
+                tablaClientes.setItems(clientes);
+                ventaClienteCombo.setItems(clientes);
+            } catch (Exception e) {
+                System.err.println("[DASHBOARD] ERROR cargando clientes: " + e.getMessage());
+                e.printStackTrace();
+            }
+            try {
+                System.out.println("[DASHBOARD] Cargando proveedores...");
+                proveedores.setAll(proveedorDAO.listar());
+                System.out.println("[DASHBOARD] Proveedores: " + proveedores.size());
+                tablaProveedores.setItems(proveedores);
+                entradaProveedorCombo.setItems(proveedores);
+            } catch (Exception e) {
+                System.err.println("[DASHBOARD] ERROR cargando proveedores: " + e.getMessage());
+                e.printStackTrace();
+            }
+            try {
+                System.out.println("[DASHBOARD] Cargando compras...");
+                compras.setAll(compraDAO.listar());
+                System.out.println("[DASHBOARD] Compras: " + compras.size());
+                tablaCompras.setItems(compras);
+            } catch (Exception e) {
+                System.err.println("[DASHBOARD] ERROR cargando compras: " + e.getMessage());
+                e.printStackTrace();
+            }
+
             if (usuarioActual.getModulosPermitidos().contains("VENTAS")) {
+                System.out.println("[DASHBOARD] Cargando historial de ventas...");
                 cargarHistorialVentas();
+                System.out.println("[DASHBOARD] Actualizando resumen ventas hoy...");
                 actualizarResumenVentasHoy();
             }
 
+            System.out.println("[DASHBOARD] Actualizando stats home...");
             actualizarStatsHome();
+            System.out.println("[DASHBOARD] Construyendo grafico...");
             construirGraficoVentas();
+            System.out.println("[DASHBOARD] Construyendo actividad...");
             construirActividad();
+            System.out.println("[DASHBOARD] Configurando busquedas...");
+            configurarBusquedas();
+            System.out.println("[DASHBOARD] cargarDatosIniciales() FIN OK");
         } catch (Exception e) {
+            System.err.println("[DASHBOARD] ERROR en cargarDatosIniciales: " + e.getMessage());
+            e.printStackTrace();
             Alertas.error("No se pudieron cargar los datos desde la base de datos.\n" + e.getMessage());
         }
     }
@@ -208,13 +363,16 @@ public class DashboardController {
         lblTotalMedicamentosRep.setText(medicamentos.size() + " medicamentos registrados");
     }
 
-    // ============ NAVEGACIÓN ENTRE SECCIONES (mismo FXML) ============
+    // ============ NAVEGACIÓN ENTRE SECCIONES ============
 
     @FXML private void showHome() { showSection("HOME"); }
     @FXML private void showInventario() { showSection("INVENTARIO"); }
     @FXML private void showVentas() { showSection("VENTAS"); }
     @FXML private void showUsuarios() { showSection("USUARIOS"); }
     @FXML private void showReportes() { showSection("REPORTES"); }
+    @FXML private void showClientes() { showSection("CLIENTES"); }
+    @FXML private void showCompras() { showSection("COMPRAS"); }
+    @FXML private void showProveedores() { showSection("PROVEEDORES"); }
     @FXML private void showConfiguracion() { showSection("CONFIGURACION"); loadConfiguracion(); }
 
     private void showSection(String seccion) {
@@ -224,8 +382,11 @@ public class DashboardController {
         usuariosView.setVisible(false); usuariosView.setManaged(false);
         reportesView.setVisible(false); reportesView.setManaged(false);
         configuracionView.setVisible(false); configuracionView.setManaged(false);
+        if (clientesView != null) { clientesView.setVisible(false); clientesView.setManaged(false); }
+        if (proveedoresView != null) { proveedoresView.setVisible(false); proveedoresView.setManaged(false); }
+        if (comprasView != null) { comprasView.setVisible(false); comprasView.setManaged(false); }
 
-        for (Button b : List.of(navHome, navInventario, navVentas, navUsuarios, navReportes, navConfiguracion)) {
+        for (Button b : List.of(navHome, navInventario, navVentas, navUsuarios, navReportes, navConfiguracion, navClientes, navCompras, navProveedores)) {
             b.getStyleClass().remove("active");
         }
 
@@ -237,7 +398,7 @@ public class DashboardController {
                 break;
             case "VENTAS":
                 ventasView.setVisible(true); ventasView.setManaged(true);
-                sectionTitleLabel.setText("Punto de venta");
+                sectionTitleLabel.setText("Ventas");
                 navVentas.getStyleClass().add("active");
                 cargarHistorialVentas();
                 break;
@@ -250,6 +411,21 @@ public class DashboardController {
                 reportesView.setVisible(true); reportesView.setManaged(true);
                 sectionTitleLabel.setText("Módulo de reportes");
                 navReportes.getStyleClass().add("active");
+                break;
+            case "CLIENTES":
+                if (clientesView != null) { clientesView.setVisible(true); clientesView.setManaged(true); }
+                sectionTitleLabel.setText("Gestión de clientes");
+                navClientes.getStyleClass().add("active");
+                break;
+            case "COMPRAS":
+                if (comprasView != null) { comprasView.setVisible(true); comprasView.setManaged(true); }
+                sectionTitleLabel.setText("Historial de compras");
+                navCompras.getStyleClass().add("active");
+                break;
+            case "PROVEEDORES":
+                if (proveedoresView != null) { proveedoresView.setVisible(true); proveedoresView.setManaged(true); }
+                sectionTitleLabel.setText("Directorio de proveedores");
+                navProveedores.getStyleClass().add("active");
                 break;
             case "CONFIGURACION":
                 configuracionView.setVisible(true); configuracionView.setManaged(true);
@@ -279,16 +455,14 @@ public class DashboardController {
     private void handleGuardarMedicamento() {
         try {
             String nombre = nombreMedField.getText().trim();
-            String categoria = categoriaMedField.getText().trim();
+            String categoria = categoriaMedField.getValue() != null ? categoriaMedField.getValue().trim() : (categoriaMedField.getEditor().getText() != null ? categoriaMedField.getEditor().getText().trim() : "");
 
-            // Validación: campos vacíos
             if (nombre.isEmpty() || categoria.isEmpty() || precioMedField.getText().trim().isEmpty()
                     || stockMedField.getText().trim().isEmpty() || loteMedField.getText().trim().isEmpty()) {
                 Alertas.error("Ningún campo puede quedar vacío.");
                 return;
             }
 
-            // Validación: no duplicados
             if (medicamentoDAO.existeNombre(nombre)) {
                 Alertas.error("Ya existe un medicamento registrado con ese nombre.");
                 return;
@@ -322,7 +496,8 @@ public class DashboardController {
         }
         try {
             medicamentoSeleccionado.setNombre(nombreMedField.getText().trim());
-            medicamentoSeleccionado.setCategoria(categoriaMedField.getText().trim());
+            String categoria = categoriaMedField.getValue() != null ? categoriaMedField.getValue().trim() : (categoriaMedField.getEditor().getText() != null ? categoriaMedField.getEditor().getText().trim() : "");
+            medicamentoSeleccionado.setCategoria(categoria);
             medicamentoSeleccionado.setPrecio(parseDoublePositivo(precioMedField.getText(), "El precio"));
             medicamentoSeleccionado.setStock(parseIntPositivo(stockMedField.getText(), "El stock"));
             medicamentoSeleccionado.setLote(loteMedField.getText().trim());
@@ -346,7 +521,6 @@ public class DashboardController {
             Alertas.error("Selecciona un medicamento de la tabla para eliminarlo.");
             return;
         }
-        // Confirmación obligatoria antes de eliminar
         if (!Alertas.confirmar("¿Eliminar el medicamento \"" + medicamentoSeleccionado.getNombre() + "\"?")) {
             return;
         }
@@ -361,13 +535,37 @@ public class DashboardController {
     }
 
     @FXML
+    private void handleRegistrarEntrada() {
+        Medicamento m = entradaMedicamentoCombo.getValue();
+        if (m == null) {
+            Alertas.error("Selecciona un medicamento.");
+            return;
+        }
+        int cantidad;
+        try {
+            cantidad = parseIntPositivo(entradaCantidadField.getText(), "La cantidad");
+        } catch (IllegalArgumentException e) {
+            Alertas.error(e.getMessage());
+            return;
+        }
+        try {
+            movimientoInventarioDAO.registrarEntrada(m.getId(), cantidad, usuarioActual.getId());
+            Alertas.info("Ingreso registrado: +" + cantidad + " unidades de \"" + m.getNombre() + "\".");
+            entradaCantidadField.clear();
+            cargarDatosIniciales();
+        } catch (Exception e) {
+            Alertas.error("No se pudo registrar el ingreso.\n" + e.getMessage());
+        }
+    }
+
+    @FXML
     private void handleLimpiarMedicamento() {
         limpiarFormularioMedicamento();
     }
 
     private void cargarFormularioMedicamento(Medicamento m) {
         nombreMedField.setText(m.getNombre());
-        categoriaMedField.setText(m.getCategoria());
+        categoriaMedField.setValue(m.getCategoria());
         precioMedField.setText(String.valueOf(m.getPrecio()));
         stockMedField.setText(String.valueOf(m.getStock()));
         loteMedField.setText(m.getLote());
@@ -376,7 +574,8 @@ public class DashboardController {
 
     private void limpiarFormularioMedicamento() {
         nombreMedField.clear();
-        categoriaMedField.clear();
+        categoriaMedField.setValue(null);
+        if (categoriaMedField.getEditor() != null) categoriaMedField.getEditor().clear();
         precioMedField.clear();
         stockMedField.clear();
         loteMedField.clear();
@@ -385,7 +584,7 @@ public class DashboardController {
         tablaMedicamentos.getSelectionModel().clearSelection();
     }
 
-    // ============ PUNTO DE VENTA (Cajero) ============
+    // ============ PUNTO DE VENTA ============
 
     private void configurarColumnasVentas() {
         colCarritoNombre.setCellValueFactory(new PropertyValueFactory<>("nombreMedicamento"));
@@ -394,6 +593,7 @@ public class DashboardController {
         colCarritoSubtotal.setCellValueFactory(new PropertyValueFactory<>("subtotal"));
 
         colVentaId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colVentaCliente.setCellValueFactory(new PropertyValueFactory<>("clienteNombre"));
         colVentaFactura.setCellValueFactory(new PropertyValueFactory<>("numeroFactura"));
         colVentaFecha.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
                 cellData.getValue().getFecha() != null ? cellData.getValue().getFecha().format(FMT_FECHA_VENTA) : ""));
@@ -406,14 +606,54 @@ public class DashboardController {
             public String toString(Medicamento m) {
                 return m == null ? "" : m.getNombre() + "  (stock: " + m.getStock() + ")";
             }
-
             @Override
             public Medicamento fromString(String string) {
-                return null; // no se usa: el combo es de solo selección, no editable
+                if (string == null || string.isEmpty()) return null;
+                return ventaMedicamentoCombo.getItems().stream()
+                        .filter(m -> toString(m).equals(string))
+                        .findFirst().orElse(null);
             }
         };
         ventaMedicamentoCombo.setConverter(convertidor);
         entradaMedicamentoCombo.setConverter(convertidor);
+
+        ventaMedicamentoCombo.setEditable(true);
+        TextFields.bindAutoCompletion(ventaMedicamentoCombo.getEditor(), ventaMedicamentoCombo.getItems());
+    }
+
+    private void configurarCombosNuevos() {
+        StringConverter<Cliente> convCliente = new StringConverter<>() {
+            @Override
+            public String toString(Cliente c) {
+                return c == null ? "" : c.getNombres() + " " + c.getApellidos() + " - " + c.getCedula();
+            }
+            @Override
+            public Cliente fromString(String string) {
+                if (string == null || string.isEmpty()) return null;
+                return ventaClienteCombo.getItems().stream()
+                        .filter(c -> toString(c).equals(string))
+                        .findFirst().orElse(null);
+            }
+        };
+        if (ventaClienteCombo != null) {
+            ventaClienteCombo.setConverter(convCliente);
+            ventaClienteCombo.setEditable(true);
+            TextFields.bindAutoCompletion(ventaClienteCombo.getEditor(), ventaClienteCombo.getItems());
+        }
+
+        StringConverter<Proveedor> convProv = new StringConverter<>() {
+            @Override
+            public String toString(Proveedor p) {
+                return p == null ? "" : p.getNombre();
+            }
+            @Override
+            public Proveedor fromString(String string) {
+                return null;
+            }
+        };
+        if (entradaProveedorCombo != null) {
+            entradaProveedorCombo.setConverter(convProv);
+        }
     }
 
     @FXML
@@ -492,22 +732,23 @@ public class DashboardController {
             Alertas.error("Agrega al menos un producto al carrito antes de registrar la venta.");
             return;
         }
+        Cliente cliente = ventaClienteCombo.getValue();
+        if (cliente == null) {
+            Alertas.error("Debe seleccionar un cliente para registrar la venta.");
+            return;
+        }
         if (!Alertas.confirmar("¿Registrar esta venta? " + totalVentaLabel.getText())) {
             return;
         }
         try {
             List<DetalleVenta> detallesVendidos = new java.util.ArrayList<>(carrito);
-            Venta venta = ventaDAO.registrarVenta(usuarioActual.getId(), detallesVendidos);
+            Venta venta = ventaDAO.registrarVenta(usuarioActual.getId(), cliente.getId(), detallesVendidos);
 
             Alertas.info("Venta registrada correctamente.\nFactura: " + venta.getNumeroFactura());
 
             carrito.clear();
             actualizarTotalCarrito();
-            cargarDatosIniciales(); // refresca stock, historial y resumen del día
-
-            if (Alertas.confirmar("¿Deseas generar el recibo en PDF?")) {
-                generarReciboPDF(venta, detallesVendidos);
-            }
+            cargarDatosIniciales();
 
         } catch (IllegalArgumentException iae) {
             Alertas.error(iae.getMessage());
@@ -516,21 +757,228 @@ public class DashboardController {
         }
     }
 
-    private void generarReciboPDF(Venta venta, List<DetalleVenta> detalles) {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Guardar recibo de venta");
-        chooser.setInitialFileName("recibo_" + venta.getNumeroFactura() + ".pdf");
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
-
-        File archivo = chooser.showSaveDialog(btnRegistrarVenta.getScene().getWindow());
-        if (archivo == null) return;
-
+    @FXML
+    private void handleGenerarPDF() {
+        Venta v = tablaHistorialVentas.getSelectionModel().getSelectedItem();
+        if (v == null) {
+            Alertas.error("Debe seleccionar una venta del historial para generar el PDF.");
+            return;
+        }
         try {
-            Configuracion cfg = configuracionDAO.obtener();
-            pdfGeneratorService.generarReciboVenta(venta, detalles, usuarioActual, cfg, archivo);
-            Alertas.info("Recibo generado en:\n" + archivo.getAbsolutePath());
+            ClienteDAO cliDAO = new ClienteDAO();
+            Cliente c = cliDAO.leer(v.getClienteId());
+            if (c == null) {
+                c = new Cliente(0, "Consumidor", "Final", "N/A", "9999999999", "N/A", "N/A");
+            }
+            List<DetalleVenta> detalles = ventaDAO.obtenerDetalle(v.getId());
+
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Guardar factura PDF");
+            chooser.setInitialFileName("Factura_" + v.getNumeroFactura() + ".pdf");
+            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+
+            File archivo = chooser.showSaveDialog(btnAnularVenta.getScene().getWindow());
+            if (archivo == null) return;
+
+            Document doc = new Document(PageSize.A4, 40, 40, 50, 50);
+            PdfWriter.getInstance(doc, new FileOutputStream(archivo));
+            doc.open();
+
+            BaseColor brandColor = new BaseColor(111, 168, 175);
+            BaseColor lightGray = new BaseColor(230, 230, 230);
+            BaseColor darkGray = new BaseColor(130, 130, 130);
+
+            Font fontLogo = new Font(Font.FontFamily.HELVETICA, 16, Font.BOLD, BaseColor.WHITE);
+            Font fontNegocioSmall = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, BaseColor.BLACK);
+            Font fontNormal = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL, BaseColor.BLACK);
+            Font fontNormalGray = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL, darkGray);
+            Font fontHeader = new Font(Font.FontFamily.HELVETICA, 10, Font.BOLD, BaseColor.BLACK);
+            Font fontHeaderSmall = new Font(Font.FontFamily.HELVETICA, 8, Font.BOLD, BaseColor.BLACK);
+
+            PdfPTable headerTable = new PdfPTable(3);
+            headerTable.setWidthPercentage(100);
+            headerTable.setWidths(new float[]{1.3f, 4f, 2.5f});
+
+            PdfPCell logoCell = new PdfPCell(new Phrase("HampiCare", fontLogo));
+            logoCell.setBackgroundColor(brandColor);
+            logoCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            logoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            logoCell.setFixedHeight(60f);
+            logoCell.setBorder(Rectangle.NO_BORDER);
+            headerTable.addCell(logoCell);
+
+            PdfPCell negocioCell = new PdfPCell();
+            negocioCell.setBorder(Rectangle.NO_BORDER);
+            negocioCell.setPaddingLeft(15f);
+            negocioCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            negocioCell.addElement(new Phrase("HampiCare App", fontNegocioSmall));
+            negocioCell.addElement(new Phrase("Av. Patria y 12 de Octubre, Quito", fontNormal));
+            negocioCell.addElement(new Phrase("170143", fontNormal));
+            headerTable.addCell(negocioCell);
+
+            PdfPCell factCell = new PdfPCell();
+            factCell.setBorder(Rectangle.NO_BORDER);
+            factCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            factCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+
+            String fecStr = v.getFecha() != null ? v.getFecha().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "";
+
+            Paragraph pFact = new Paragraph("Factura# " + v.getNumeroFactura(), fontHeader);
+            pFact.setAlignment(Element.ALIGN_RIGHT);
+            factCell.addElement(pFact);
+            Paragraph pFecL = new Paragraph("Fecha de emisión", fontHeader);
+            pFecL.setAlignment(Element.ALIGN_RIGHT);
+            factCell.addElement(pFecL);
+            Paragraph pFec = new Paragraph(fecStr, fontNormal);
+            pFec.setAlignment(Element.ALIGN_RIGHT);
+            factCell.addElement(pFec);
+
+            headerTable.addCell(factCell);
+            doc.add(headerTable);
+
+            doc.add(new Paragraph(" "));
+            PdfPTable lineTable = new PdfPTable(1);
+            lineTable.setWidthPercentage(100);
+            PdfPCell lineCell = new PdfPCell(new Phrase(""));
+            lineCell.setBorder(Rectangle.BOTTOM);
+            lineCell.setBorderColorBottom(brandColor);
+            lineCell.setBorderWidthBottom(3f);
+            lineTable.addCell(lineCell);
+            doc.add(lineTable);
+            doc.add(new Paragraph(" "));
+
+            PdfPTable billingTable = new PdfPTable(3);
+            billingTable.setWidthPercentage(100);
+            billingTable.setWidths(new float[]{2f, 2f, 1.5f});
+
+            PdfPCell billTo = new PdfPCell();
+            billTo.setBorder(Rectangle.NO_BORDER);
+            billTo.addElement(new Phrase("FACTURAR A", fontHeaderSmall));
+            billTo.addElement(new Paragraph(c.getNombres() + " " + c.getApellidos(), fontNormal));
+            billTo.addElement(new Paragraph(c.getCorreo(), fontNormal));
+            billTo.addElement(new Paragraph(c.getTelefono(), fontNormal));
+            billTo.addElement(new Paragraph("CI: " + c.getCedula(), fontNormal));
+            billingTable.addCell(billTo);
+
+            PdfPCell details = new PdfPCell();
+            details.setBorder(Rectangle.NO_BORDER);
+            details.addElement(new Phrase("DETALLES", fontHeaderSmall));
+            details.addElement(new Paragraph("Venta de productos", fontNormal));
+            details.addElement(new Paragraph("farmacéuticos en mostrador.", fontNormal));
+            billingTable.addCell(details);
+
+            PdfPCell payment = new PdfPCell();
+            payment.setBorder(Rectangle.NO_BORDER);
+            payment.addElement(new Phrase("PAGO", fontHeaderSmall));
+            payment.addElement(new Paragraph("Vencimiento " + fecStr, fontNormal));
+            payment.addElement(new Paragraph(String.format("$%.2f", v.getTotal()), fontNormal));
+            billingTable.addCell(payment);
+
+            doc.add(billingTable);
+            doc.add(new Paragraph(" "));
+            doc.add(new Paragraph(" "));
+
+            PdfPTable itemsTable = new PdfPTable(4);
+            itemsTable.setWidthPercentage(100);
+            itemsTable.setWidths(new float[]{4f, 1f, 1.5f, 1.5f});
+
+            String[] headers = {"ARTÍCULOS", "CANT.", "PRECIOS", "MONTO"};
+            for (int i = 0; i < headers.length; i++) {
+                PdfPCell hc = new PdfPCell(new Phrase(headers[i], fontHeaderSmall));
+                hc.setBorder(Rectangle.BOTTOM | Rectangle.TOP);
+                hc.setBorderColor(lightGray);
+                hc.setPaddingTop(5f);
+                hc.setPaddingBottom(5f);
+                if (i > 0) hc.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                itemsTable.addCell(hc);
+            }
+
+            for (DetalleVenta d : detalles) {
+                PdfPCell c1 = new PdfPCell();
+                c1.setBorder(Rectangle.BOTTOM);
+                c1.setBorderColor(lightGray);
+                c1.setPaddingTop(8f);
+                c1.setPaddingBottom(8f);
+                c1.addElement(new Phrase(d.getNombreMedicamento(), fontNormal));
+                c1.addElement(new Phrase("Medicina", fontNormalGray));
+                itemsTable.addCell(c1);
+
+                PdfPCell c2 = new PdfPCell(new Phrase(String.valueOf(d.getCantidad()), fontNormal));
+                c2.setBorder(Rectangle.BOTTOM);
+                c2.setBorderColor(lightGray);
+                c2.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                c2.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                itemsTable.addCell(c2);
+
+                PdfPCell c3 = new PdfPCell(new Phrase(String.format("$%.2f", d.getPrecioUnitario()), fontNormal));
+                c3.setBorder(Rectangle.BOTTOM);
+                c3.setBorderColor(lightGray);
+                c3.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                c3.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                itemsTable.addCell(c3);
+
+                PdfPCell c4 = new PdfPCell(new Phrase(String.format("$%.2f", d.getSubtotal()), fontNormal));
+                c4.setBorder(Rectangle.BOTTOM);
+                c4.setBorderColor(lightGray);
+                c4.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                c4.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                itemsTable.addCell(c4);
+            }
+            doc.add(itemsTable);
+            doc.add(new Paragraph(" "));
+
+            PdfPTable totalsTable = new PdfPTable(2);
+            totalsTable.setWidthPercentage(100);
+            totalsTable.setWidths(new float[]{7f, 1.5f});
+
+            double sub = v.getTotal() / 1.15;
+            double tax = v.getTotal() - sub;
+
+            PdfPCell s1 = new PdfPCell(new Phrase("Subtotal", fontNormalGray));
+            s1.setBorder(Rectangle.NO_BORDER);
+            s1.setPaddingTop(5f);
+            s1.setPaddingBottom(5f);
+            totalsTable.addCell(s1);
+            PdfPCell s2 = new PdfPCell(new Phrase(String.format("$%.2f", sub), fontNormalGray));
+            s2.setBorder(Rectangle.NO_BORDER);
+            s2.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            s2.setPaddingTop(5f);
+            s2.setPaddingBottom(5f);
+            totalsTable.addCell(s2);
+
+            PdfPCell t1 = new PdfPCell(new Phrase("Tax (15%)", fontNormalGray));
+            t1.setBorder(Rectangle.BOTTOM);
+            t1.setBorderColor(lightGray);
+            t1.setPaddingTop(5f);
+            t1.setPaddingBottom(8f);
+            totalsTable.addCell(t1);
+            PdfPCell t2 = new PdfPCell(new Phrase(String.format("$%.2f", tax), fontNormalGray));
+            t2.setBorder(Rectangle.BOTTOM);
+            t2.setBorderColor(lightGray);
+            t2.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            t2.setPaddingTop(5f);
+            t2.setPaddingBottom(8f);
+            totalsTable.addCell(t2);
+
+            PdfPCell tot1 = new PdfPCell(new Phrase("Total a pagar", fontHeader));
+            tot1.setBorder(Rectangle.BOTTOM);
+            tot1.setBorderColor(lightGray);
+            tot1.setPaddingTop(8f);
+            tot1.setPaddingBottom(8f);
+            totalsTable.addCell(tot1);
+            PdfPCell tot2 = new PdfPCell(new Phrase(String.format("$%.2f", v.getTotal()), fontHeader));
+            tot2.setBorder(Rectangle.BOTTOM);
+            tot2.setBorderColor(lightGray);
+            tot2.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            tot2.setPaddingTop(8f);
+            tot2.setPaddingBottom(8f);
+            totalsTable.addCell(tot2);
+
+            doc.add(totalsTable);
+            doc.close();
+            Alertas.info("PDF generado con éxito en:\n" + archivo.getAbsolutePath());
         } catch (Exception e) {
-            Alertas.error("No se pudo generar el recibo.\n" + e.getMessage());
+            Alertas.error("Error al generar PDF:\n" + e.getMessage());
         }
     }
 
@@ -557,58 +1005,265 @@ public class DashboardController {
         }
     }
 
+    // ============ CRUD COMPRAS ============
+
     @FXML
-    private void handleRegistrarEntrada() {
+    private void handleRegistrarCompra() {
+        Proveedor p = entradaProveedorCombo.getValue();
         Medicamento m = entradaMedicamentoCombo.getValue();
-        if (m == null) {
-            Alertas.error("Selecciona un medicamento.");
+        if (p == null || m == null) {
+            Alertas.error("Selecciona un proveedor y un medicamento.");
             return;
         }
+
         int cantidad;
+        double precio;
         try {
             cantidad = Integer.parseInt(entradaCantidadField.getText().trim());
+            precio = Double.parseDouble(entradaPrecioCompraField.getText().trim());
         } catch (NumberFormatException e) {
-            Alertas.error("La cantidad debe ser un número entero válido.");
+            Alertas.error("La cantidad y precio deben ser valores numéricos válidos.");
             return;
         }
-        if (cantidad <= 0) {
-            Alertas.error("La cantidad debe ser mayor a 0.");
+        if (cantidad <= 0 || precio < 0) {
+            Alertas.error("La cantidad debe ser mayor a 0 y el precio no puede ser negativo.");
             return;
         }
+
         try {
-            movimientoInventarioDAO.registrarEntrada(m.getId(), cantidad, usuarioActual.getId());
-            Alertas.info("Ingreso registrado: +" + cantidad + " unidades de \"" + m.getNombre() + "\".");
+            Compra c = new Compra();
+            c.setProveedorId(p.getId());
+            c.setProveedorNombre(p.getNombre());
+            c.setMedicamentoId(m.getId());
+            c.setMedicamentoNombre(m.getNombre());
+            c.setCantidad(cantidad);
+            c.setPrecioCompra(precio);
+            c.setFecha(LocalDateTime.now());
+
+            compraDAO.guardar(c);
+            compras.add(c);
+
+            m.setStock(m.getStock() + cantidad);
+            medicamentoDAO.actualizar(m);
+
+            Alertas.info("Compra registrada: +" + cantidad + " unidades de \"" + m.getNombre() + "\".");
             entradaCantidadField.clear();
+            entradaPrecioCompraField.clear();
+            tablaMedicamentos.refresh();
             cargarDatosIniciales();
         } catch (Exception e) {
-            Alertas.error("No se pudo registrar el ingreso.\n" + e.getMessage());
+            Alertas.error("No se pudo registrar la compra.\n" + e.getMessage());
         }
     }
 
-    private void cargarHistorialVentas() {
-        if (usuarioActual == null || !usuarioActual.getModulosPermitidos().contains("VENTAS")) return;
+    // ============ CRUD CLIENTES ============
+
+    private void configurarColumnasClientes() {
+        if (colCliCedula == null) return;
+        colCliCedula.setCellValueFactory(new PropertyValueFactory<>("cedula"));
+        colCliNombres.setCellValueFactory(new PropertyValueFactory<>("nombres"));
+        colCliApellidos.setCellValueFactory(new PropertyValueFactory<>("apellidos"));
+        colCliCorreo.setCellValueFactory(new PropertyValueFactory<>("correo"));
+        colCliTelefono.setCellValueFactory(new PropertyValueFactory<>("telefono"));
+        colCliSector.setCellValueFactory(new PropertyValueFactory<>("sector"));
+    }
+
+    @FXML
+    private void handleGuardarCliente() {
         try {
-            historialVentas.setAll(ventaDAO.listarPorUsuario(usuarioActual.getId()));
+            String nombres = nombreCliField.getText().trim();
+            String apellidos = apellidoCliField.getText().trim();
+            String cedula = cedulaCliField.getText().trim();
+            String correo = correoCliField.getText().trim();
+            String telefono = telefonoCliField.getText().trim();
+            String sector = sectorCliField.getText().trim();
+
+            if (nombres.isEmpty() || apellidos.isEmpty() || cedula.isEmpty()) {
+                Alertas.error("Nombres, apellidos y cédula son obligatorios.");
+                return;
+            }
+
+            Cliente cli = new Cliente(0, nombres, apellidos, correo, cedula, telefono, sector);
+            clienteDAO.guardar(cli);
+            Alertas.info("Cliente guardado correctamente.");
+            limpiarFormularioCliente();
+            cargarDatosIniciales();
         } catch (Exception e) {
-            Alertas.error("No se pudo cargar el historial de ventas.\n" + e.getMessage());
+            Alertas.error("No se pudo guardar el cliente.\n" + e.getMessage());
         }
     }
 
-    private void actualizarResumenVentasHoy() {
+    @FXML
+    private void handleActualizarCliente() {
+        if (clienteSeleccionado == null) {
+            Alertas.error("Selecciona un cliente de la tabla para editarlo.");
+            return;
+        }
         try {
-            double[] resumen = ventaDAO.resumenHoy(usuarioActual.getId());
-            int cantidadVentas = (int) resumen[0];
-            double total = resumen[1];
-            ventasHoyValueLabel.setText(String.format("$%.2f", total));
-            ventasHoyCountLabel.setText(cantidadVentas == 1
-                    ? "1 venta realizada hoy"
-                    : cantidadVentas + " ventas realizadas hoy");
+            clienteSeleccionado.setNombre(nombreCliField.getText().trim());
+            clienteSeleccionado.setApellidos(apellidoCliField.getText().trim());
+            clienteSeleccionado.setCedula(cedulaCliField.getText().trim());
+            clienteSeleccionado.setCorreo(correoCliField.getText().trim());
+            clienteSeleccionado.setTelefono(telefonoCliField.getText().trim());
+            clienteSeleccionado.setSector(sectorCliField.getText().trim());
+
+            clienteDAO.actualizar(clienteSeleccionado);
+            Alertas.info("Cliente actualizado correctamente.");
+            limpiarFormularioCliente();
+            cargarDatosIniciales();
         } catch (Exception e) {
-            // No bloquea la carga del dashboard si falla el resumen del día.
+            Alertas.error("No se pudo actualizar el cliente.\n" + e.getMessage());
         }
     }
 
-    // ============ CRUD USUARIOS (solo Administrador) ============
+    @FXML
+    private void handleEliminarCliente() {
+        if (clienteSeleccionado == null) {
+            Alertas.error("Selecciona un cliente de la tabla para eliminarlo.");
+            return;
+        }
+        if (!Alertas.confirmar("¿Eliminar al cliente \"" + clienteSeleccionado.getNombre() + " " + clienteSeleccionado.getApellidos() + "\"?")) {
+            return;
+        }
+        try {
+            clienteDAO.eliminar(clienteSeleccionado.getId());
+            Alertas.info("Cliente eliminado.");
+            limpiarFormularioCliente();
+            cargarDatosIniciales();
+        } catch (Exception e) {
+            Alertas.error("No se pudo eliminar el cliente.\n" + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleLimpiarCliente() {
+        limpiarFormularioCliente();
+    }
+
+    private void cargarFormularioCliente(Cliente c) {
+        nombreCliField.setText(c.getNombre());
+        apellidoCliField.setText(c.getApellidos());
+        cedulaCliField.setText(c.getCedula());
+        correoCliField.setText(c.getCorreo());
+        telefonoCliField.setText(c.getTelefono());
+        sectorCliField.setText(c.getSector());
+    }
+
+    private void limpiarFormularioCliente() {
+        nombreCliField.clear();
+        apellidoCliField.clear();
+        cedulaCliField.clear();
+        correoCliField.clear();
+        telefonoCliField.clear();
+        sectorCliField.clear();
+        clienteSeleccionado = null;
+        if (tablaClientes != null) tablaClientes.getSelectionModel().clearSelection();
+    }
+
+    // ============ CRUD PROVEEDORES ============
+
+    private void configurarColumnasProveedores() {
+        if (colProvId == null) return;
+        colProvId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colProvNombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
+        colProvCorreo.setCellValueFactory(new PropertyValueFactory<>("correo"));
+        colProvTelefono.setCellValueFactory(new PropertyValueFactory<>("telefono"));
+    }
+
+    @FXML
+    private void handleGuardarProveedor() {
+        try {
+            String nombre = nombreProvField.getText().trim();
+            String correo = correoProvField.getText().trim();
+            String telefono = telefonoProvField.getText().trim();
+
+            if (nombre.isEmpty()) {
+                Alertas.error("El nombre del proveedor es obligatorio.");
+                return;
+            }
+
+            Proveedor p = new Proveedor(0, nombre, correo, telefono);
+            proveedorDAO.guardar(p);
+            Alertas.info("Proveedor guardado correctamente.");
+            limpiarFormularioProveedor();
+            cargarDatosIniciales();
+        } catch (Exception e) {
+            Alertas.error("No se pudo guardar el proveedor.\n" + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleActualizarProveedor() {
+        if (proveedorSeleccionado == null) {
+            Alertas.error("Selecciona un proveedor de la tabla para editarlo.");
+            return;
+        }
+        try {
+            proveedorSeleccionado.setNombre(nombreProvField.getText().trim());
+            proveedorSeleccionado.setCorreo(correoProvField.getText().trim());
+            proveedorSeleccionado.setTelefono(telefonoProvField.getText().trim());
+
+            proveedorDAO.actualizar(proveedorSeleccionado);
+            Alertas.info("Proveedor actualizado correctamente.");
+            limpiarFormularioProveedor();
+            cargarDatosIniciales();
+        } catch (Exception e) {
+            Alertas.error("No se pudo actualizar el proveedor.\n" + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleEliminarProveedor() {
+        if (proveedorSeleccionado == null) {
+            Alertas.error("Selecciona un proveedor de la tabla para eliminarlo.");
+            return;
+        }
+        if (!Alertas.confirmar("¿Eliminar al proveedor \"" + proveedorSeleccionado.getNombre() + "\"?")) {
+            return;
+        }
+        try {
+            proveedorDAO.eliminar(proveedorSeleccionado.getId());
+            Alertas.info("Proveedor eliminado.");
+            limpiarFormularioProveedor();
+            cargarDatosIniciales();
+        } catch (Exception e) {
+            Alertas.error("No se pudo eliminar el proveedor.\n" + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleLimpiarProveedor() {
+        limpiarFormularioProveedor();
+    }
+
+    private void cargarFormularioProveedor(Proveedor p) {
+        nombreProvField.setText(p.getNombre());
+        correoProvField.setText(p.getCorreo());
+        telefonoProvField.setText(p.getTelefono());
+    }
+
+    private void limpiarFormularioProveedor() {
+        nombreProvField.clear();
+        correoProvField.clear();
+        telefonoProvField.clear();
+        proveedorSeleccionado = null;
+        if (tablaProveedores != null) tablaProveedores.getSelectionModel().clearSelection();
+    }
+
+    // ============ COMPRAS COLUMNAS ============
+
+    private void configurarColumnasCompras() {
+        if (colCompraId == null) return;
+        colCompraId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colCompraProveedor.setCellValueFactory(new PropertyValueFactory<>("proveedorNombre"));
+        colCompraMedicamento.setCellValueFactory(new PropertyValueFactory<>("medicamentoNombre"));
+        colCompraCantidad.setCellValueFactory(new PropertyValueFactory<>("cantidad"));
+        colCompraPrecio.setCellValueFactory(new PropertyValueFactory<>("precioCompra"));
+        colCompraFecha.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
+                cellData.getValue().getFecha() != null ? cellData.getValue().getFecha().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) : ""));
+    }
+
+    // ============ CRUD USUARIOS ============
 
     private void configurarColumnasUsuarios() {
         colIdUsu.setCellValueFactory(new PropertyValueFactory<>("id"));
@@ -634,7 +1289,6 @@ public class DashboardController {
                 Alertas.error("Ya existe un usuario registrado con ese correo.");
                 return;
             }
-            // Usuario.setContrasena() ya valida el mínimo de 6 caracteres (lanza excepción si no cumple)
             Usuario nuevo = Usuario.crearPorRol(0, nombre, correo, contrasena, rol, true);
 
             usuarioDAO.guardar(nuevo);
@@ -759,7 +1413,6 @@ public class DashboardController {
 
     private void construirGraficoVentas() {
         barsContainer.getChildren().clear();
-        // TODO: reemplazar por datos reales de la tabla VENTAS agrupados por día
         String[] dias = {"LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"};
         double[] valores = {42, 58, 38, 70, 62, 98, 108};
 
@@ -787,26 +1440,28 @@ public class DashboardController {
 
         if (usuarioActual.getModulosPermitidos().contains("VENTAS")) {
             try {
+                System.out.println("[DASHBOARD] construirActividad: cargando ultimas ventas...");
                 List<Venta> ultimas = ventaDAO.ultimasVentas(usuarioActual.getId(), 3);
+                System.out.println("[DASHBOARD] ultimasVentas: " + ultimas.size() + " registros");
                 if (ultimas.isEmpty()) {
-                    agregarActividad("n", "🧾", "Aún no has registrado ventas",
-                            "Ve a \"Punto de venta\" para registrar tu primera venta");
+                    agregarActividad("n", "\uD83E\uDDFE", "Aún no has registrado ventas",
+                            "Ve a \"Ventas\" para registrar tu primera venta");
                 } else {
                     for (Venta v : ultimas) {
                         String fecha = v.getFecha() != null ? v.getFecha().format(FMT_FECHA_VENTA) : "";
-                        agregarActividad("g", "✓", "Venta " + v.getNumeroFactura(),
-                                fecha + " · $" + String.format("%.2f", v.getTotal()));
+                        agregarActividad("g", "\u2713", "Venta " + v.getNumeroFactura(),
+                                fecha + " \u00B7 $" + String.format("%.2f", v.getTotal()));
                     }
                 }
             } catch (Exception e) {
-                agregarActividad("a", "⚠", "No se pudo cargar el historial de ventas", "");
+                agregarActividad("a", "\u26A0", "No se pudo cargar el historial de ventas", "");
             }
         } else {
-            agregarActividad("n", "📦", "Inventario", medicamentos.size() + " medicamentos registrados");
+            agregarActividad("n", "\uD83D\uDCE6", "Inventario", medicamentos.size() + " medicamentos registrados");
         }
 
         long stockBajo = medicamentos.stream().filter(Medicamento::isStockBajo).count();
-        agregarActividad("a", "⚠", "Stock bajo detectado", stockBajo + " artículos en el umbral");
+        agregarActividad("a", "\u26A0", "Stock bajo detectado", stockBajo + " artículos en el umbral");
     }
 
     private void agregarActividad(String color, String glyph, String titulo, String subtitulo) {
@@ -824,6 +1479,100 @@ public class DashboardController {
 
         item.getChildren().addAll(dot, new VBox(2, t, s));
         activityContainer.getChildren().add(item);
+    }
+
+    // ============ HISTORIAL DE VENTAS ============
+
+    private void cargarHistorialVentas() {
+        if (usuarioActual == null) return;
+        try {
+            if (usuarioActual.getModulosPermitidos().contains("USUARIOS")) {
+                System.out.println("[DASHBOARD] cargarHistorialVentas: listarTodas (admin)");
+                historialVentas.setAll(ventaDAO.listarTodas());
+            } else {
+                System.out.println("[DASHBOARD] cargarHistorialVentas: listarPorUsuario id=" + usuarioActual.getId());
+                historialVentas.setAll(ventaDAO.listarPorUsuario(usuarioActual.getId()));
+            }
+            System.out.println("[DASHBOARD] Historial ventas cargado: " + historialVentas.size() + " registros");
+        } catch (Exception e) {
+            System.err.println("[DASHBOARD] ERROR cargando historial ventas: " + e.getMessage());
+            e.printStackTrace();
+            Alertas.error("No se pudo cargar el historial de ventas.\n" + e.getMessage());
+        }
+    }
+
+    private void actualizarResumenVentasHoy() {
+        try {
+            System.out.println("[DASHBOARD] resumenHoy: llamando a ventaDAO...");
+            double[] resumen = ventaDAO.resumenHoy(usuarioActual.getId());
+            int cantidadVentas = (int) resumen[0];
+            double total = resumen[1];
+            ventasHoyValueLabel.setText(String.format("$%.2f", total));
+            ventasHoyCountLabel.setText(cantidadVentas == 1
+                    ? "1 venta realizada hoy"
+                    : cantidadVentas + " ventas realizadas hoy");
+        } catch (Exception e) {
+        }
+    }
+
+    // ============ BÚSQUEDAS ============
+
+    private void configurarBusquedas() {
+        if (searchMedicamentos != null && filteredMedicamentos != null) {
+            searchMedicamentos.textProperty().addListener((obs, old, newVal) ->
+                    filteredMedicamentos.setPredicate(m -> {
+                        if (newVal == null || newVal.isEmpty()) return true;
+                        String lower = newVal.toLowerCase();
+                        return m.getNombre().toLowerCase().contains(lower)
+                                || m.getCategoria().toLowerCase().contains(lower)
+                                || m.getLote().toLowerCase().contains(lower);
+                    }));
+        }
+        if (searchClientes != null && filteredClientes != null) {
+            searchClientes.textProperty().addListener((obs, old, newVal) ->
+                    filteredClientes.setPredicate(c -> {
+                        if (newVal == null || newVal.isEmpty()) return true;
+                        String lower = newVal.toLowerCase();
+                        return c.getNombre().toLowerCase().contains(lower)
+                                || c.getApellidos().toLowerCase().contains(lower)
+                                || c.getCedula().contains(newVal);
+                    }));
+        }
+        if (searchProveedores != null && filteredProveedores != null) {
+            searchProveedores.textProperty().addListener((obs, old, newVal) ->
+                    filteredProveedores.setPredicate(p -> {
+                        if (newVal == null || newVal.isEmpty()) return true;
+                        String lower = newVal.toLowerCase();
+                        return p.getNombre().toLowerCase().contains(lower);
+                    }));
+        }
+        if (searchCompras != null && filteredCompras != null) {
+            searchCompras.textProperty().addListener((obs, old, newVal) ->
+                    filteredCompras.setPredicate(c -> {
+                        if (newVal == null || newVal.isEmpty()) return true;
+                        String lower = newVal.toLowerCase();
+                        return (c.getProveedorNombre() != null && c.getProveedorNombre().toLowerCase().contains(lower))
+                                || (c.getMedicamentoNombre() != null && c.getMedicamentoNombre().toLowerCase().contains(lower));
+                    }));
+        }
+        if (searchVentas != null && filteredVentas != null) {
+            searchVentas.textProperty().addListener((obs, old, newVal) ->
+                    filteredVentas.setPredicate(v -> {
+                        if (newVal == null || newVal.isEmpty()) return true;
+                        String lower = newVal.toLowerCase();
+                        return v.getNumeroFactura().toLowerCase().contains(lower)
+                                || (v.getClienteNombre() != null && v.getClienteNombre().toLowerCase().contains(lower));
+                    }));
+        }
+        if (searchUsuarios != null && filteredUsuarios != null) {
+            searchUsuarios.textProperty().addListener((obs, old, newVal) ->
+                    filteredUsuarios.setPredicate(u -> {
+                        if (newVal == null || newVal.isEmpty()) return true;
+                        String lower = newVal.toLowerCase();
+                        return u.getNombre().toLowerCase().contains(lower)
+                                || u.getCorreo().toLowerCase().contains(lower);
+                    }));
+        }
     }
 
     // ============ LOGOUT ============

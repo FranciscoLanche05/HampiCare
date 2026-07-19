@@ -14,7 +14,7 @@ public class Administrador extends Usuario {
 
     @Override
     public Set<String> getModulosPermitidos() {
-        return Set.of("HOME", "INVENTARIO", "USUARIOS", "REPORTES", "CONFIGURACION");
+        return Set.of("HOME", "INVENTARIO", "USUARIOS", "REPORTES", "CONFIGURACION", "VENTAS", "CLIENTES", "PROVEEDORES", "COMPRAS");
     }
 
     @Override
