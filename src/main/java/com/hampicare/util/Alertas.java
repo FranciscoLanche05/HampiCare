@@ -5,11 +5,6 @@ import javafx.scene.control.ButtonType;
 
 import java.util.Optional;
 
-/**
- * Centraliza el uso de javafx.scene.control.Alert, tal como exige la
- * rúbrica: "Usar ventanas de alerta de JavaFX para errores,
- * confirmaciones e información."
- */
 public final class Alertas {
 
     private Alertas() {

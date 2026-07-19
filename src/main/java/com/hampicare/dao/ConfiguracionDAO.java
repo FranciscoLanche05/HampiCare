@@ -8,7 +8,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-/** No implementa ICRUD porque la tabla CONFIGURACION siempre tiene una sola fila. */
 public class ConfiguracionDAO {
 
     public Configuracion obtener() throws SQLException {

@@ -5,8 +5,11 @@ import com.hampicare.model.Usuario;
 import com.hampicare.app.Main;
 import com.hampicare.dao.ConfiguracionDAO;
 import com.hampicare.dao.MedicamentoDAO;
+import com.hampicare.dao.MovimientoInventarioDAO;
 import com.hampicare.dao.UsuarioDAO;
+import com.hampicare.dao.VentaDAO;
 import com.hampicare.model.*;
+import com.hampicare.service.PDFGeneratorService;
 import com.hampicare.util.Alertas;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -17,36 +20,36 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.util.StringConverter;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Controlador de la ÚNICA pantalla de dashboard. No existen tres
- * dashboards: existe este controlador, que decide qué secciones se ven
- * según usuario.getModulosPermitidos() (POLIMORFISMO) — así se cumple
- * "reutilización de pantallas con POO".
- */
+
 public class DashboardController {
 
     // ---- Sidebar ----
     @FXML private javafx.scene.layout.BorderPane rootPane;
-    @FXML private Button navHome, navInventario, navUsuarios, navReportes, navConfiguracion;
+    @FXML private Button navHome, navInventario, navVentas, navUsuarios, navReportes, navConfiguracion;
     @FXML private Label userInitialsLabel, userNameLabel, userRoleLabel;
     @FXML private Label sectionTitleLabel;
 
-    // ---- Secciones (todas viven en el mismo dashboard.fxml) ----
-    @FXML private VBox homeView, inventarioView, usuariosView, reportesView, configuracionView;
+    // ---- Secciones ----
+    @FXML private VBox homeView, inventarioView, ventasView, usuariosView, reportesView, configuracionView;
 
     // ---- Home ----
     @FXML private javafx.scene.text.Text welcomeNameLabel;
     @FXML private Label stockBajoValueLabel, usuariosActivosValueLabel;
     @FXML private HBox barsContainer;
     @FXML private VBox activityContainer;
+    @FXML private HBox ventasHoyCard;
+    @FXML private Label ventasHoyValueLabel, ventasHoyCountLabel;
 
-    // ---- Inventario (CRUD medicamentos) ----
+    // ---- Inventario (CRUD de los medicamentos) ----
     @FXML private TextField nombreMedField, categoriaMedField, precioMedField, stockMedField, loteMedField;
     @FXML private DatePicker fechaVencMedPicker;
     @FXML private Button btnGuardarMed, btnActualizarMed, btnEliminarMed, btnLimpiarMed;
@@ -57,7 +60,22 @@ public class DashboardController {
     @FXML private TableColumn<Medicamento, Integer> colStockMed;
     @FXML private TableColumn<Medicamento, LocalDate> colFechaMed;
 
-    // ---- Usuarios (solo Administrador) ----
+    // ---- Ventas (Cajero) ----
+    @FXML private ComboBox<Medicamento> ventaMedicamentoCombo, entradaMedicamentoCombo;
+    @FXML private TextField ventaCantidadField, entradaCantidadField;
+    @FXML private Button btnAgregarCarrito, btnQuitarDelCarrito, btnVaciarCarrito, btnRegistrarVenta;
+    @FXML private Button btnRegistrarEntrada, btnAnularVenta;
+    @FXML private Label totalVentaLabel;
+    @FXML private TableView<DetalleVenta> tablaCarrito;
+    @FXML private TableColumn<DetalleVenta, String> colCarritoNombre;
+    @FXML private TableColumn<DetalleVenta, Integer> colCarritoCantidad;
+    @FXML private TableColumn<DetalleVenta, Double> colCarritoPrecio, colCarritoSubtotal;
+    @FXML private TableView<Venta> tablaHistorialVentas;
+    @FXML private TableColumn<Venta, Integer> colVentaId;
+    @FXML private TableColumn<Venta, String> colVentaFactura, colVentaFecha;
+    @FXML private TableColumn<Venta, Double> colVentaTotal;
+
+    // ---- Usuarios (Administrador) ----
     @FXML private TextField nombreUsuField, correoUsuField;
     @FXML private PasswordField contrasenaUsuField;
     @FXML private ComboBox<String> rolUsuCombo;
@@ -78,16 +96,25 @@ public class DashboardController {
     private final MedicamentoDAO medicamentoDAO = new MedicamentoDAO();
     private final UsuarioDAO usuarioDAO = new UsuarioDAO();
     private final ConfiguracionDAO configuracionDAO = new ConfiguracionDAO();
+    private final VentaDAO ventaDAO = new VentaDAO();
+    private final MovimientoInventarioDAO movimientoInventarioDAO = new MovimientoInventarioDAO();
+    private final PDFGeneratorService pdfGeneratorService = new PDFGeneratorService();
+
+    private static final DateTimeFormatter FMT_FECHA_VENTA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private Usuario usuarioActual;
     private final ObservableList<Medicamento> medicamentos = FXCollections.observableArrayList();
     private final ObservableList<Usuario> usuarios = FXCollections.observableArrayList();
+    private final ObservableList<DetalleVenta> carrito = FXCollections.observableArrayList();
+    private final ObservableList<Venta> historialVentas = FXCollections.observableArrayList();
     private Medicamento medicamentoSeleccionado;
 
     @FXML
     public void initialize() {
         configurarColumnasMedicamentos();
         configurarColumnasUsuarios();
+        configurarColumnasVentas();
+        configurarCombosMedicamento();
         rolUsuCombo.setItems(FXCollections.observableArrayList(
                 Usuario.ROL_ADMIN, Usuario.ROL_CAJERO, Usuario.ROL_REPORTES));
 
@@ -99,14 +126,11 @@ public class DashboardController {
         tablaUsuarios.getSelectionModel().selectedItemProperty().addListener((obs, old, sel) -> {
             if (sel != null) cargarFormularioUsuario(sel);
         });
+
+        tablaCarrito.setItems(carrito);
+        tablaHistorialVentas.setItems(historialVentas);
     }
 
-    /**
-     * Punto de entrada real de este controlador: recibe el objeto Usuario
-     * ya autenticado y adapta toda la pantalla (menús, colores, datos)
-     * según su rol. Esto es lo que exige la rúbrica en "Reutilización de
-     * pantallas con POO".
-     */
     public void setUsuario(Usuario usuario) {
         this.usuarioActual = usuario;
 
@@ -115,24 +139,31 @@ public class DashboardController {
         userInitialsLabel.setText(iniciales(usuario.getNombre()));
         welcomeNameLabel.setText(usuario.getNombre());
 
-        // Acento de color por rol (polimorfismo -> CSS)
+        // Polimorfismo -> CSS
         rootPane.getStyleClass().removeIf(c -> c.startsWith("role-"));
         rootPane.getStyleClass().add(usuario.getClaseColorRol());
 
-        aplicarPermisos(usuario.getModulosPermitidos());
+        Set<String> modulos = usuario.getModulosPermitidos();
+        aplicarPermisos(modulos);
 
-        // Cajero/Reportes no pueden eliminar (solo lectura / solo operaciones)
+        // Cajero/Reportes (solo lectura / solo operaciones)
         btnEliminarMed.setVisible(usuario.puedeEliminar());
         btnEliminarMed.setManaged(usuario.puedeEliminar());
+
+        boolean tieneVentas = modulos.contains("VENTAS");
+        ventasHoyCard.setVisible(tieneVentas);
+        ventasHoyCard.setManaged(tieneVentas);
 
         cargarDatosIniciales();
         showSection("HOME");
     }
 
-    /** Muestra/oculta botones de navegación según los módulos permitidos del rol. */
     private void aplicarPermisos(Set<String> modulos) {
         navInventario.setVisible(modulos.contains("INVENTARIO"));
         navInventario.setManaged(modulos.contains("INVENTARIO"));
+
+        navVentas.setVisible(modulos.contains("VENTAS"));
+        navVentas.setManaged(modulos.contains("VENTAS"));
 
         navUsuarios.setVisible(modulos.contains("USUARIOS"));
         navUsuarios.setManaged(modulos.contains("USUARIOS"));
@@ -148,9 +179,16 @@ public class DashboardController {
         try {
             medicamentos.setAll(medicamentoDAO.listar());
             tablaMedicamentos.setItems(medicamentos);
+            ventaMedicamentoCombo.setItems(medicamentos);
+            entradaMedicamentoCombo.setItems(medicamentos);
 
             usuarios.setAll(usuarioDAO.listar());
             tablaUsuarios.setItems(usuarios);
+
+            if (usuarioActual.getModulosPermitidos().contains("VENTAS")) {
+                cargarHistorialVentas();
+                actualizarResumenVentasHoy();
+            }
 
             actualizarStatsHome();
             construirGraficoVentas();
@@ -174,6 +212,7 @@ public class DashboardController {
 
     @FXML private void showHome() { showSection("HOME"); }
     @FXML private void showInventario() { showSection("INVENTARIO"); }
+    @FXML private void showVentas() { showSection("VENTAS"); }
     @FXML private void showUsuarios() { showSection("USUARIOS"); }
     @FXML private void showReportes() { showSection("REPORTES"); }
     @FXML private void showConfiguracion() { showSection("CONFIGURACION"); loadConfiguracion(); }
@@ -181,11 +220,12 @@ public class DashboardController {
     private void showSection(String seccion) {
         homeView.setVisible(false); homeView.setManaged(false);
         inventarioView.setVisible(false); inventarioView.setManaged(false);
+        ventasView.setVisible(false); ventasView.setManaged(false);
         usuariosView.setVisible(false); usuariosView.setManaged(false);
         reportesView.setVisible(false); reportesView.setManaged(false);
         configuracionView.setVisible(false); configuracionView.setManaged(false);
 
-        for (Button b : List.of(navHome, navInventario, navUsuarios, navReportes, navConfiguracion)) {
+        for (Button b : List.of(navHome, navInventario, navVentas, navUsuarios, navReportes, navConfiguracion)) {
             b.getStyleClass().remove("active");
         }
 
@@ -194,6 +234,12 @@ public class DashboardController {
                 inventarioView.setVisible(true); inventarioView.setManaged(true);
                 sectionTitleLabel.setText("Inventario de medicamentos");
                 navInventario.getStyleClass().add("active");
+                break;
+            case "VENTAS":
+                ventasView.setVisible(true); ventasView.setManaged(true);
+                sectionTitleLabel.setText("Punto de venta");
+                navVentas.getStyleClass().add("active");
+                cargarHistorialVentas();
                 break;
             case "USUARIOS":
                 usuariosView.setVisible(true); usuariosView.setManaged(true);
@@ -337,6 +383,229 @@ public class DashboardController {
         fechaVencMedPicker.setValue(null);
         medicamentoSeleccionado = null;
         tablaMedicamentos.getSelectionModel().clearSelection();
+    }
+
+    // ============ PUNTO DE VENTA (Cajero) ============
+
+    private void configurarColumnasVentas() {
+        colCarritoNombre.setCellValueFactory(new PropertyValueFactory<>("nombreMedicamento"));
+        colCarritoCantidad.setCellValueFactory(new PropertyValueFactory<>("cantidad"));
+        colCarritoPrecio.setCellValueFactory(new PropertyValueFactory<>("precioUnitario"));
+        colCarritoSubtotal.setCellValueFactory(new PropertyValueFactory<>("subtotal"));
+
+        colVentaId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colVentaFactura.setCellValueFactory(new PropertyValueFactory<>("numeroFactura"));
+        colVentaFecha.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
+                cellData.getValue().getFecha() != null ? cellData.getValue().getFecha().format(FMT_FECHA_VENTA) : ""));
+        colVentaTotal.setCellValueFactory(new PropertyValueFactory<>("total"));
+    }
+
+    private void configurarCombosMedicamento() {
+        StringConverter<Medicamento> convertidor = new StringConverter<>() {
+            @Override
+            public String toString(Medicamento m) {
+                return m == null ? "" : m.getNombre() + "  (stock: " + m.getStock() + ")";
+            }
+
+            @Override
+            public Medicamento fromString(String string) {
+                return null; // no se usa: el combo es de solo selección, no editable
+            }
+        };
+        ventaMedicamentoCombo.setConverter(convertidor);
+        entradaMedicamentoCombo.setConverter(convertidor);
+    }
+
+    @FXML
+    private void handleAgregarCarrito() {
+        Medicamento m = ventaMedicamentoCombo.getValue();
+        if (m == null) {
+            Alertas.error("Selecciona un medicamento.");
+            return;
+        }
+        int cantidad;
+        try {
+            cantidad = Integer.parseInt(ventaCantidadField.getText().trim());
+        } catch (NumberFormatException e) {
+            Alertas.error("La cantidad debe ser un número entero válido.");
+            return;
+        }
+        if (cantidad <= 0) {
+            Alertas.error("La cantidad debe ser mayor a 0.");
+            return;
+        }
+
+        int yaEnCarrito = carrito.stream()
+                .filter(d -> d.getMedicamentoId() == m.getId())
+                .mapToInt(DetalleVenta::getCantidad)
+                .sum();
+
+        if (yaEnCarrito + cantidad > m.getStock()) {
+            Alertas.error("Stock insuficiente. Disponible: " + m.getStock() +
+                    (yaEnCarrito > 0 ? " (ya tienes " + yaEnCarrito + " en el carrito)." : "."));
+            return;
+        }
+
+        try {
+            DetalleVenta existente = carrito.stream()
+                    .filter(d -> d.getMedicamentoId() == m.getId())
+                    .findFirst().orElse(null);
+
+            if (existente != null) {
+                existente.setCantidad(existente.getCantidad() + cantidad);
+                tablaCarrito.refresh();
+            } else {
+                carrito.add(new DetalleVenta(m.getId(), m.getNombre(), cantidad, m.getPrecio()));
+            }
+            ventaCantidadField.clear();
+            actualizarTotalCarrito();
+        } catch (IllegalArgumentException e) {
+            Alertas.error(e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleQuitarDelCarrito() {
+        DetalleVenta sel = tablaCarrito.getSelectionModel().getSelectedItem();
+        if (sel == null) {
+            Alertas.error("Selecciona un producto del carrito para quitarlo.");
+            return;
+        }
+        carrito.remove(sel);
+        actualizarTotalCarrito();
+    }
+
+    @FXML
+    private void handleVaciarCarrito() {
+        carrito.clear();
+        actualizarTotalCarrito();
+    }
+
+    private void actualizarTotalCarrito() {
+        double total = carrito.stream().mapToDouble(DetalleVenta::getSubtotal).sum();
+        totalVentaLabel.setText("Total: $" + String.format("%.2f", total));
+    }
+
+    @FXML
+    private void handleRegistrarVenta() {
+        if (carrito.isEmpty()) {
+            Alertas.error("Agrega al menos un producto al carrito antes de registrar la venta.");
+            return;
+        }
+        if (!Alertas.confirmar("¿Registrar esta venta? " + totalVentaLabel.getText())) {
+            return;
+        }
+        try {
+            List<DetalleVenta> detallesVendidos = new java.util.ArrayList<>(carrito);
+            Venta venta = ventaDAO.registrarVenta(usuarioActual.getId(), detallesVendidos);
+
+            Alertas.info("Venta registrada correctamente.\nFactura: " + venta.getNumeroFactura());
+
+            carrito.clear();
+            actualizarTotalCarrito();
+            cargarDatosIniciales(); // refresca stock, historial y resumen del día
+
+            if (Alertas.confirmar("¿Deseas generar el recibo en PDF?")) {
+                generarReciboPDF(venta, detallesVendidos);
+            }
+
+        } catch (IllegalArgumentException iae) {
+            Alertas.error(iae.getMessage());
+        } catch (Exception e) {
+            Alertas.error("No se pudo registrar la venta.\n" + e.getMessage());
+        }
+    }
+
+    private void generarReciboPDF(Venta venta, List<DetalleVenta> detalles) {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Guardar recibo de venta");
+        chooser.setInitialFileName("recibo_" + venta.getNumeroFactura() + ".pdf");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+
+        File archivo = chooser.showSaveDialog(btnRegistrarVenta.getScene().getWindow());
+        if (archivo == null) return;
+
+        try {
+            Configuracion cfg = configuracionDAO.obtener();
+            pdfGeneratorService.generarReciboVenta(venta, detalles, usuarioActual, cfg, archivo);
+            Alertas.info("Recibo generado en:\n" + archivo.getAbsolutePath());
+        } catch (Exception e) {
+            Alertas.error("No se pudo generar el recibo.\n" + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleAnularVenta() {
+        Venta sel = tablaHistorialVentas.getSelectionModel().getSelectedItem();
+        if (sel == null) {
+            Alertas.error("Selecciona una venta del historial para anularla.");
+            return;
+        }
+        if (sel.getFecha() == null || !sel.getFecha().toLocalDate().equals(LocalDate.now())) {
+            Alertas.error("Solo puedes anular ventas realizadas hoy.");
+            return;
+        }
+        if (!Alertas.confirmar("¿Anular la venta \"" + sel.getNumeroFactura() + "\"? Esto repondrá el stock vendido.")) {
+            return;
+        }
+        try {
+            ventaDAO.anularVenta(sel.getId(), usuarioActual.getId());
+            Alertas.info("Venta anulada. El stock fue repuesto.");
+            cargarDatosIniciales();
+        } catch (Exception e) {
+            Alertas.error("No se pudo anular la venta.\n" + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleRegistrarEntrada() {
+        Medicamento m = entradaMedicamentoCombo.getValue();
+        if (m == null) {
+            Alertas.error("Selecciona un medicamento.");
+            return;
+        }
+        int cantidad;
+        try {
+            cantidad = Integer.parseInt(entradaCantidadField.getText().trim());
+        } catch (NumberFormatException e) {
+            Alertas.error("La cantidad debe ser un número entero válido.");
+            return;
+        }
+        if (cantidad <= 0) {
+            Alertas.error("La cantidad debe ser mayor a 0.");
+            return;
+        }
+        try {
+            movimientoInventarioDAO.registrarEntrada(m.getId(), cantidad, usuarioActual.getId());
+            Alertas.info("Ingreso registrado: +" + cantidad + " unidades de \"" + m.getNombre() + "\".");
+            entradaCantidadField.clear();
+            cargarDatosIniciales();
+        } catch (Exception e) {
+            Alertas.error("No se pudo registrar el ingreso.\n" + e.getMessage());
+        }
+    }
+
+    private void cargarHistorialVentas() {
+        if (usuarioActual == null || !usuarioActual.getModulosPermitidos().contains("VENTAS")) return;
+        try {
+            historialVentas.setAll(ventaDAO.listarPorUsuario(usuarioActual.getId()));
+        } catch (Exception e) {
+            Alertas.error("No se pudo cargar el historial de ventas.\n" + e.getMessage());
+        }
+    }
+
+    private void actualizarResumenVentasHoy() {
+        try {
+            double[] resumen = ventaDAO.resumenHoy(usuarioActual.getId());
+            int cantidadVentas = (int) resumen[0];
+            double total = resumen[1];
+            ventasHoyValueLabel.setText(String.format("$%.2f", total));
+            ventasHoyCountLabel.setText(cantidadVentas == 1
+                    ? "1 venta realizada hoy"
+                    : cantidadVentas + " ventas realizadas hoy");
+        } catch (Exception e) {
+            // No bloquea la carga del dashboard si falla el resumen del día.
+        }
     }
 
     // ============ CRUD USUARIOS (solo Administrador) ============
@@ -515,11 +784,29 @@ public class DashboardController {
 
     private void construirActividad() {
         activityContainer.getChildren().clear();
-        // TODO: reemplazar por datos reales de MOVIMIENTOS_INVENTARIO / VENTAS
-        agregarActividad("g", "✓", "Venta completada #1042", "Hace 5 min · $145.00");
-        agregarActividad("a", "⚠", "Stock bajo detectado", medicamentos.stream()
-                .filter(Medicamento::isStockBajo).count() + " artículos en el umbral");
-        agregarActividad("n", "📦", "Nuevo ingreso de mercadería", "Hace 1 hora · Lote A-441");
+
+        if (usuarioActual.getModulosPermitidos().contains("VENTAS")) {
+            try {
+                List<Venta> ultimas = ventaDAO.ultimasVentas(usuarioActual.getId(), 3);
+                if (ultimas.isEmpty()) {
+                    agregarActividad("n", "🧾", "Aún no has registrado ventas",
+                            "Ve a \"Punto de venta\" para registrar tu primera venta");
+                } else {
+                    for (Venta v : ultimas) {
+                        String fecha = v.getFecha() != null ? v.getFecha().format(FMT_FECHA_VENTA) : "";
+                        agregarActividad("g", "✓", "Venta " + v.getNumeroFactura(),
+                                fecha + " · $" + String.format("%.2f", v.getTotal()));
+                    }
+                }
+            } catch (Exception e) {
+                agregarActividad("a", "⚠", "No se pudo cargar el historial de ventas", "");
+            }
+        } else {
+            agregarActividad("n", "📦", "Inventario", medicamentos.size() + " medicamentos registrados");
+        }
+
+        long stockBajo = medicamentos.stream().filter(Medicamento::isStockBajo).count();
+        agregarActividad("a", "⚠", "Stock bajo detectado", stockBajo + " artículos en el umbral");
     }
 
     private void agregarActividad(String color, String glyph, String titulo, String subtitulo) {

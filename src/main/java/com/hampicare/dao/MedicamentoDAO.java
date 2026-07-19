@@ -73,7 +73,7 @@ public class MedicamentoDAO implements ICRUD<Medicamento> {
         }
     }
 
-    /** Validación obligatoria: no permitir nombres duplicados al registrar. */
+    /** Validación obligatoria: no permitir nombres duplicados **/
     public boolean existeNombre(String nombre) throws SQLException {
         String sql = "SELECT 1 FROM medicamentos WHERE nombre=?";
         try (Connection c = Conexion.getInstancia().getConnection();

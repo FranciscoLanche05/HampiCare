@@ -47,15 +47,14 @@ public class LoginController {
                 return;
             }
 
-            // Validación extra: el rol elegido en el login debe coincidir con
-            // el rol real que tiene el usuario guardado en la base de datos.
+            // Validación extra: el rol elegido en el login debe coincidir con el rol real que tiene el usuario guardado en la base de datos.
             if (!usuario.getRol().equalsIgnoreCase(rolSeleccionado)) {
                 Alertas.error("Este usuario no tiene el rol \"" + rolSeleccionado +
                         "\". Verifica el rol seleccionado e intenta de nuevo.");
                 return;
             }
 
-            // Redirección al dashboard único, adaptado por rol (polimorfismo)
+            // Redirección al dashboard único por rol
             Main.irADashboard(usuario);
 
         } catch (SQLException e) {

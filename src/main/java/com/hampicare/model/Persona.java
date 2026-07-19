@@ -1,17 +1,5 @@
 package com.hampicare.model;
 
-/**
- * Clase base abstracta. Toda entidad que representa a una persona dentro
- * del sistema (Usuario, y a futuro Cliente/Proveedor si se requiere)
- * hereda de aquí.
- *
- * PILAR APLICADO: Abstracción + Encapsulamiento
- * - Los atributos son 'protected' para que las clases hijas puedan
- *   acceder directamente sin romper el encapsulamiento hacia el exterior.
- * - getDescripcionRol() es un método abstracto: cada clase hija decide
- *   cómo se describe a sí misma (esto se termina de resolver con
- *   POLIMORFISMO en las clases hijas de Usuario).
- */
 public abstract class Persona {
 
     protected int id;

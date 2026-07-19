@@ -2,10 +2,6 @@ package com.hampicare.model;
 
 import java.util.Set;
 
-/**
- * Rol operativo: registra ventas/transacciones y consulta stock, pero no
- * puede eliminar registros ni gestionar usuarios. Color de acento: verde.
- */
 public class Cajero extends Usuario {
 
     public Cajero() {
@@ -18,7 +14,7 @@ public class Cajero extends Usuario {
 
     @Override
     public Set<String> getModulosPermitidos() {
-        return Set.of("HOME", "INVENTARIO");
+        return Set.of("HOME", "VENTAS", "INVENTARIO");
     }
 
     @Override

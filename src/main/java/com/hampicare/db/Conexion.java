@@ -6,10 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-/**
- * PATRÓN SINGLETON: garantiza que exista una única instancia de la
- * conexión a la base de datos en toda la aplicación.
- */
 public final class Conexion {
 
     private static Conexion instancia;

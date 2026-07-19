@@ -2,17 +2,6 @@ package com.hampicare.model;
 
 import java.util.Set;
 
-/**
- * Usuario del sistema. Es abstracta a propósito: nunca se instancia
- * "Usuario" directamente, siempre una de sus 3 subclases concretas
- * (Administrador, Cajero, ReportesUsuario), cada una con su propio
- * comportamiento.
- *
- * PILAR APLICADO: Herencia (extiende Persona) + Encapsulamiento
- * (contrasena/rol/activo son privados con getters/setters validados)
- * + Abstracción (getModulosPermitidos/getClaseColor son el "contrato"
- * que cada rol debe cumplir).
- */
 public abstract class Usuario extends Persona {
 
     public static final String ROL_ADMIN = "ADMIN";
@@ -62,12 +51,7 @@ public abstract class Usuario extends Persona {
         this.activo = activo;
     }
 
-    /**
-     * POLIMORFISMO: cada rol devuelve el conjunto de módulos que puede ver.
-     * El DashboardController usa este método para mostrar/ocultar
-     * secciones — así se logra "una sola pantalla que se adapta según el
-     * rol", sin necesidad de tres dashboards distintos.
-     */
+    /** POLIMORFISMO: cada rol devuelve el conjunto de módulos que puede ver. */
     public abstract Set<String> getModulosPermitidos();
 
     /** POLIMORFISMO: cada rol tiene su propio color de acento en la UI. */
@@ -81,12 +65,6 @@ public abstract class Usuario extends Persona {
         return rol;
     }
 
-    /**
-     * Fábrica estática: dado el rol guardado en la base de datos, crea la
-     * subclase concreta correspondiente. Esto evita usar 'if/else' de rol
-     * por todo el código: una vez creado el objeto correcto, cada método
-     * heredado ya se comporta distinto por sí mismo (polimorfismo real).
-     */
     public static Usuario crearPorRol(int id, String nombre, String correo,
                                       String contrasena, String rol, boolean activo) {
         if (rol == null) {
