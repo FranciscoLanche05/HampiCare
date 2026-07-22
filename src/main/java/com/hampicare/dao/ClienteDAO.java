@@ -83,10 +83,12 @@ public class ClienteDAO implements ICRUD<Cliente> {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             stmt.executeUpdate();
-                } catch (SQLException e) {
-            throw new Exception("DB Error", e);
+        } catch (SQLException e) {
+            if ("23503".equals(e.getSQLState())) {
+                throw new Exception("No se puede eliminar el cliente porque tiene facturas/ventas asociadas.");
+            }
+            throw new Exception("DB Error: " + e.getMessage(), e);
         }
-        
     }
 
     @Override

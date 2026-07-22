@@ -45,4 +45,4 @@ out/
 hampicare_db*
 
 ### Environment Variables ###
-.env
+.envhampicare*.db

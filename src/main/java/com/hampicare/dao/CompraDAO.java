@@ -87,10 +87,12 @@ public class CompraDAO implements ICRUD<Compra> {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             stmt.executeUpdate();
-                } catch (SQLException e) {
-            throw new Exception("DB Error", e);
+        } catch (SQLException e) {
+            if ("23503".equals(e.getSQLState())) {
+                throw new Exception("No se puede eliminar la compra porque está enlazada a otros registros de inventario.");
+            }
+            throw new Exception("DB Error: " + e.getMessage(), e);
         }
-        
     }
 
     @Override

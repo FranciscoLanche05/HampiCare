@@ -72,6 +72,11 @@ public class MedicamentoDAO implements ICRUD<Medicamento> {
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, id);
             ps.executeUpdate();
+        } catch (SQLException e) {
+            if ("23503".equals(e.getSQLState())) {
+                throw new SQLException("No se puede eliminar el medicamento porque tiene historial asociado en compras o ventas.");
+            }
+            throw e;
         }
     }
 
