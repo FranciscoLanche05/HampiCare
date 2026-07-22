@@ -77,10 +77,12 @@ public class ProveedorDAO implements ICRUD<Proveedor> {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             stmt.executeUpdate();
-                } catch (SQLException e) {
-            throw new Exception("DB Error", e);
+        } catch (SQLException e) {
+            if ("23503".equals(e.getSQLState())) {
+                throw new Exception("No se puede eliminar el proveedor porque tiene historial de compras asociado.");
+            }
+            throw new Exception("DB Error: " + e.getMessage(), e);
         }
-        
     }
 
     @Override

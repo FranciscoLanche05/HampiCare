@@ -62,6 +62,11 @@ public class UsuarioDAO implements ICRUD<Usuario> {
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, id);
             ps.executeUpdate();
+        } catch (SQLException e) {
+            if ("23503".equals(e.getSQLState())) {
+                throw new SQLException("No se puede eliminar el usuario porque tiene transacciones (ventas/compras) registradas a su nombre.");
+            }
+            throw e;
         }
     }
 

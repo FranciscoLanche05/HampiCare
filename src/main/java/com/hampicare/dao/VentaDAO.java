@@ -131,13 +131,12 @@ public class VentaDAO {
         return lista;
     }
 
-    public List<DetalleVenta> obtenerDetalle(int ventaId) throws SQLException {
+    public List<DetalleVenta> obtenerDetalle(int ventaId, Connection c) throws SQLException {
         String sql = "SELECT dv.medicamento_id, m.nombre, dv.cantidad, dv.precio_unitario, dv.subtotal " +
                 "FROM detalle_ventas dv JOIN medicamentos m ON m.id = dv.medicamento_id " +
                 "WHERE dv.venta_id = ?";
         List<DetalleVenta> lista = new ArrayList<>();
-        try (Connection c = Conexion.getInstancia().getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, ventaId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -153,12 +152,16 @@ public class VentaDAO {
         return lista;
     }
 
+    public List<DetalleVenta> obtenerDetalle(int ventaId) throws SQLException {
+        return obtenerDetalle(ventaId, Conexion.getInstancia().getConnection());
+    }
+
     public void anularVenta(int ventaId, int usuarioId) throws SQLException {
         Connection c = Conexion.getInstancia().getConnection();
         boolean autoCommitOriginal = c.getAutoCommit();
         c.setAutoCommit(false);
         try {
-            List<DetalleVenta> detalles = obtenerDetalle(ventaId);
+            List<DetalleVenta> detalles = obtenerDetalle(ventaId, c);
             if (detalles.isEmpty()) {
                 throw new SQLException("La venta no existe o ya fue anulada.");
             }

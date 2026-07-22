@@ -859,7 +859,7 @@ public class DashboardController {
             factCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
             factCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
 
-            String fecStr = v.getFecha() != null ? v.getFecha().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "";
+            String fecStr = v.getFecha() != null ? v.getFecha().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) : "";
 
             Paragraph pFact = new Paragraph("Factura# " + v.getNumeroFactura(), fontHeader);
             pFact.setAlignment(Element.ALIGN_RIGHT);
@@ -1027,8 +1027,8 @@ public class DashboardController {
             Alertas.error("Selecciona una venta del historial para anularla.");
             return;
         }
-        if (sel.getFecha() == null || !sel.getFecha().toLocalDate().equals(LocalDate.now())) {
-            Alertas.error("Solo puedes anular ventas realizadas hoy.");
+        if (sel.getFecha() == null || java.time.Duration.between(sel.getFecha(), LocalDateTime.now()).abs().toHours() > 24) {
+            Alertas.error("Solo puedes anular ventas recientes (últimas 24 horas).");
             return;
         }
         if (!Alertas.confirmar("¿Anular la venta \"" + sel.getNumeroFactura() + "\"? Esto repondrá el stock vendido.")) {
@@ -1447,17 +1447,9 @@ public class DashboardController {
         colRepVenId.setCellValueFactory(new PropertyValueFactory<>("id"));
         colRepVenFactura.setCellValueFactory(new PropertyValueFactory<>("numeroFactura"));
         colRepVenCliente.setCellValueFactory(new PropertyValueFactory<>("cliente"));
-        colRepVenFecha.setCellValueFactory(new PropertyValueFactory<>("fecha"));
-        colRepVenFecha.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || getTableView().getItems().get(getIndex()) == null) setText(null);
-                else {
-                    var f = getTableView().getItems().get(getIndex()).getFecha();
-                    setText(f != null ? f.format(FMT_FECHA_VENTA) : "");
-                }
-            }
-        });
+        colRepVenFecha.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
+                cellData.getValue().getFecha() != null ? cellData.getValue().getFecha().format(FMT_FECHA_VENTA) : ""
+        ));
         colRepVenTotal.setCellValueFactory(new PropertyValueFactory<>("total"));
         colRepVenTotal.setCellFactory(col -> new TableCell<>() {
             @Override protected void updateItem(Double item, boolean empty) {
@@ -1515,17 +1507,9 @@ public class DashboardController {
                 setText(empty || item == null ? null : String.format("$%.2f", item));
             }
         });
-        colRepCompFecha.setCellValueFactory(new PropertyValueFactory<>("fecha"));
-        colRepCompFecha.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || getTableView().getItems().get(getIndex()) == null) setText(null);
-                else {
-                    var f = getTableView().getItems().get(getIndex()).getFecha();
-                    setText(f != null ? f.format(FMT_FECHA_VENTA) : "");
-                }
-            }
-        });
+        colRepCompFecha.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
+                cellData.getValue().getFecha() != null ? cellData.getValue().getFecha().format(FMT_FECHA_VENTA) : ""
+        ));
 
         colRepCliId.setCellValueFactory(new PropertyValueFactory<>("id"));
         colRepCliNombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));

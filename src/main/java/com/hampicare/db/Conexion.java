@@ -9,15 +9,16 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.lang.reflect.Proxy;
+import java.lang.reflect.InvocationTargetException;
 
 public final class Conexion {
 
     private static Conexion instancia;
     private Connection conn;
 
-    private static final String URL = System.getProperty("SUPABASE_URL",
-            "jdbc:postgresql://aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require");
-    private static final String USUARIO = System.getProperty("SUPABASE_USER", "postgres.jswqhccogcenejfbnwuy");
+    private static final String URL = System.getProperty("SUPABASE_URL");
+    private static final String USUARIO = System.getProperty("SUPABASE_USER");
     private static final String CLAVE = System.getProperty("SUPABASE_PASSWORD", "");
 
     private Conexion() {
@@ -89,12 +90,28 @@ public final class Conexion {
 
     public Connection getConnection() {
         try {
-            if (conn == null || conn.isClosed()) {
+            if (conn == null || conn.isClosed() || (conn.getAutoCommit() && !conn.isValid(2))) {
+                if (conn != null && !conn.isClosed()) {
+                    try { conn.close(); } catch (Exception ignored) {}
+                }
+                System.out.println("[DB] Reconectando a Supabase...");
                 conn = DriverManager.getConnection(URL, USUARIO, CLAVE);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error verificando la conexión: " + e.getMessage(), e);
+            throw new RuntimeException("Error verificando la conexion: " + e.getMessage(), e);
         }
-        return conn;
+        return (Connection) Proxy.newProxyInstance(
+                Connection.class.getClassLoader(),
+                new Class[]{Connection.class},
+                (proxy, method, args) -> {
+                    if ("close".equals(method.getName())) {
+                        return null; // Ignore close() calls to protect the singleton connection
+                    }
+                    try {
+                        return method.invoke(conn, args);
+                    } catch (InvocationTargetException e) {
+                        throw e.getTargetException();
+                    }
+                });
     }
 }
